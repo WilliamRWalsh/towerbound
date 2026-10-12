@@ -1,0 +1,4 @@
+.godot/
+.export/
+*.translation
+build/
