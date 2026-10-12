@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemy.gd" id="1_enemy"]
+[ext_resource type="Script" path="res://scripts/goblin_body.gd" id="2_body"]
+[ext_resource type="Resource" path="res://data/goblin.tres" id="3_stats"]
+
+[node name="Goblin" type="PathFollow2D"]
+rotates = false
+loop = false
+script = ExtResource("1_enemy")
+stats = ExtResource("3_stats")
+stride_scale = 0.6
+
+[node name="Body" type="Node2D" parent="."]
+script = ExtResource("2_body")

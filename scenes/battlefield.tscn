@@ -1,0 +1,34 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/battlefield.gd" id="1_field"]
+[ext_resource type="Texture2D" path="res://assets/maps/woodland.png" id="2_map"]
+[ext_resource type="Script" path="res://scripts/build_grid.gd" id="3_grid"]
+[ext_resource type="Texture2D" path="res://assets/maps/woodland_blocked.png" id="4_blocked"]
+[ext_resource type="Script" path="res://scripts/enemy_path.gd" id="5_path"]
+[ext_resource type="Script" path="res://scripts/enemy_spawner.gd" id="6_spawner"]
+
+[node name="Battlefield" type="Node2D"]
+script = ExtResource("1_field")
+
+[node name="Map" type="Sprite2D" parent="."]
+texture = ExtResource("2_map")
+centered = false
+
+[node name="BuildGrid" type="Node2D" parent="." node_paths=PackedStringArray("projectile_layer")]
+y_sort_enabled = true
+script = ExtResource("3_grid")
+blocked_mask = ExtResource("4_blocked")
+projectile_layer = NodePath("../Projectiles")
+
+[node name="Towers" type="Node2D" parent="BuildGrid"]
+y_sort_enabled = true
+
+[node name="EnemyPath" type="Path2D" parent="BuildGrid"]
+y_sort_enabled = true
+script = ExtResource("5_path")
+
+[node name="Projectiles" type="Node2D" parent="."]
+
+[node name="Spawner" type="Node" parent="." node_paths=PackedStringArray("path")]
+script = ExtResource("6_spawner")
+path = NodePath("../BuildGrid/EnemyPath")
