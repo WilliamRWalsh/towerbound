@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="LevelConfig" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_config.gd" id="1_level"]
+[ext_resource type="Script" path="res://scripts/wave_config.gd" id="s_wave"]
+[ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="s_card"]
+[ext_resource type="Resource" path="res://data/cards/archer_tower.tres" id="2_archer_tower"]
+[ext_resource type="Resource" path="res://data/cards/cannon_tower.tres" id="3_cannon_tower"]
+[ext_resource type="Resource" path="res://data/cards/fireball.tres" id="4_fireball"]
+[ext_resource type="Resource" path="res://data/cards/upgrade.tres" id="5_upgrade"]
+[ext_resource type="Resource" path="res://data/cards/heal.tres" id="6_heal"]
+[ext_resource type="Resource" path="res://data/cards/barricade.tres" id="7_barricade"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_01.tres" id="w1"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_02.tres" id="w2"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_03.tres" id="w3"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_04.tres" id="w4"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_05.tres" id="w5"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_06.tres" id="w6"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_07.tres" id="w7"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_08.tres" id="w8"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_09.tres" id="w9"]
+[ext_resource type="Resource" path="res://data/levels/woodland/wave_10.tres" id="w10"]
+
+[resource]
+script = ExtResource("1_level")
+waves = Array[ExtResource("s_wave")]([ExtResource("w1"), ExtResource("w2"), ExtResource("w3"), ExtResource("w4"), ExtResource("w5"), ExtResource("w6"), ExtResource("w7"), ExtResource("w8"), ExtResource("w9"), ExtResource("w10")])
+deck = Array[ExtResource("s_card")]([ExtResource("2_archer_tower"), ExtResource("2_archer_tower"), ExtResource("2_archer_tower"), ExtResource("2_archer_tower"), ExtResource("3_cannon_tower"), ExtResource("3_cannon_tower"), ExtResource("4_fireball"), ExtResource("4_fireball"), ExtResource("5_upgrade"), ExtResource("5_upgrade"), ExtResource("6_heal"), ExtResource("6_heal"), ExtResource("7_barricade")])
+hand_size = 4
+starting_mana = 5.0
+max_mana = 10.0
+castle_health = 20
+prepare_time = 7.0

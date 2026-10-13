@@ -21,16 +21,17 @@ const BLADE_LENGTH := 23.0
 const GRIP_REST := -PI / 2 + 0.35
 const GRIP_CHOP := -0.25
 
-# Where each bone comes to rest when the skeleton collapses.
-const PILE_LIMBS: Array[PackedVector2Array] = [
-	[Vector2(-15, -3), Vector2(-4, -6)],
-	[Vector2(-2, -2), Vector2(9, -4)],
-	[Vector2(4, -7), Vector2(15, -3)],
-	[Vector2(-12, -8), Vector2(-3, -1)],
-	[Vector2(-8, -2), Vector2(1, -9)],
-	[Vector2(6, -1), Vector2(14, -8)],
-	[Vector2(-17, -7), Vector2(-9, -11)],
-	[Vector2(2, -12), Vector2(10, -11)],
+# Where each bone comes to rest when the skeleton collapses. A static var, not a const: exported
+# iOS device builds turned the const's nested `[a, b]` literals into empty arrays.
+static var _pile_limbs: Array[PackedVector2Array] = [
+	PackedVector2Array([Vector2(-15, -3), Vector2(-4, -6)]),
+	PackedVector2Array([Vector2(-2, -2), Vector2(9, -4)]),
+	PackedVector2Array([Vector2(4, -7), Vector2(15, -3)]),
+	PackedVector2Array([Vector2(-12, -8), Vector2(-3, -1)]),
+	PackedVector2Array([Vector2(-8, -2), Vector2(1, -9)]),
+	PackedVector2Array([Vector2(6, -1), Vector2(14, -8)]),
+	PackedVector2Array([Vector2(-17, -7), Vector2(-9, -11)]),
+	PackedVector2Array([Vector2(2, -12), Vector2(10, -11)]),
 ]
 const PILE_RIBS := Vector2(-3, -8)
 const PILE_SKULL := Vector2(13, -8)
@@ -55,7 +56,7 @@ func _draw() -> void:
 	var sword_arm := _arm(shoulder, weapon_angle)
 	var t := _fall(death)
 	for i in limbs.size():
-		var pile := PILE_LIMBS[i]
+		var pile := _pile_limbs[i]
 		_bone(limbs[i][0].lerp(pile[0], t), limbs[i][1].lerp(pile[1], t), 3.6)
 
 	_draw_pelvis(hip.lerp(Vector2(1, -4), t))
@@ -70,7 +71,7 @@ func _draw() -> void:
 	draw_swoosh(shoulder, ARM * 2.0 + BLADE_LENGTH * 0.8)
 	_draw_sword(hand.lerp(PILE_SWORD[0], t), (hand + blade_dir * BLADE_LENGTH).lerp(PILE_SWORD[1], t))
 	for i in sword_arm.size():
-		var pile := PILE_LIMBS[limbs.size() + i]
+		var pile := _pile_limbs[limbs.size() + i]
 		_bone(sword_arm[i][0].lerp(pile[0], t), sword_arm[i][1].lerp(pile[1], t), 3.6)
 
 	draw_health_bar(-72.0)

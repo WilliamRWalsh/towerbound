@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BarricadeCardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/cards/barricade_card_data.gd" id="1_card"]
+[ext_resource type="Texture2D" path="res://assets/cards/barricade.png" id="2_art"]
+
+[resource]
+script = ExtResource("1_card")
+health = 5.0
+title = "Barricade"
+art = ExtResource("2_art")
+cost = 2

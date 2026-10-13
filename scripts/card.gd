@@ -1,20 +1,16 @@
-class_name TowerCard
+class_name Card
 extends Control
-## A tower card in the hand. Reports taps and drags; main.gd decides what they do and the hand
-## positions the card.
+## A card in the hand, showing its CardData. Reports taps and drags; main.gd decides what they do
+## and the hand positions the card.
 
-signal tapped(card: TowerCard)
-signal drag_started(card: TowerCard)
-signal drag_moved(card: TowerCard, global_pos: Vector2)
-signal drag_released(card: TowerCard, global_pos: Vector2)
+signal tapped(card: Card)
+signal drag_started(card: Card)
+signal drag_moved(card: Card, global_pos: Vector2)
+signal drag_released(card: Card, global_pos: Vector2)
 
 const DRAG_THRESHOLD := 14.0
 
-@export var art: Texture2D
-@export var cost := 2
-@export var tower_scene: PackedScene
-## Combat stats the placed tower uses.
-@export var tower_stats: TowerStats
+@export var data: CardData
 
 var selected := false:
 	set(value):
@@ -25,9 +21,16 @@ var affordable := true:
 	set(value):
 		affordable = value
 		queue_redraw()
+## True while discard mode is armed; the card gets a red outline as a discard target.
+var discard_target := false:
+	set(value):
+		discard_target = value
+		queue_redraw()
 var dragging: bool:
 	get:
 		return _dragging
+## True while it animates away after being discarded; the hand no longer lays it out.
+var leaving := false
 ## Where the pointer pressed the card, in card-local coordinates.
 var grab_offset := Vector2.ZERO
 
@@ -69,4 +72,13 @@ func _draw() -> void:
 		glow.shadow_color = Color(1.0, 0.8, 0.3, 0.55)
 		glow.shadow_size = 14
 		draw_style_box(glow, Rect2(Vector2.ZERO, size).grow(3))
-	draw_texture_rect(art, Rect2(Vector2.ZERO, size), false, Color.WHITE if affordable else Color(0.5, 0.5, 0.55))
+	elif discard_target:
+		var outline := StyleBoxFlat.new()
+		outline.draw_center = false
+		outline.set_border_width_all(4)
+		outline.set_corner_radius_all(16)
+		outline.border_color = Color(1.0, 0.36, 0.28)
+		outline.shadow_color = Color(1.0, 0.2, 0.1, 0.5)
+		outline.shadow_size = 12
+		draw_style_box(outline, Rect2(Vector2.ZERO, size).grow(3))
+	draw_texture_rect(data.art, Rect2(Vector2.ZERO, size), false, Color.WHITE if affordable else Color(0.5, 0.5, 0.55))

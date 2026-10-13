@@ -10,7 +10,7 @@ const HIT_RADIUS := 8.0
 const FADE_TIME := 0.25
 
 var _target: Enemy
-var _damage := 1
+var _damage := 1.0
 var _speed := 0.0
 var _aim := Vector2.ZERO
 var _traveled := 0.0
@@ -18,7 +18,7 @@ var _done := false
 
 
 ## Fires an arrow from a canvas position. `speed` is in reference units per second.
-static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: int, speed: float) -> Arrow:
+static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: float, speed: float) -> Arrow:
 	var arrow := Arrow.new()
 	arrow._target = target
 	arrow._damage = damage

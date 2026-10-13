@@ -1,17 +1,32 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/battlefield.tscn" id="2_field"]
 [ext_resource type="Script" path="res://scripts/hand.gd" id="3_hand"]
 [ext_resource type="Script" path="res://scripts/mana_bar.gd" id="4_mana"]
 [ext_resource type="Script" path="res://scripts/banner.gd" id="5_banner"]
+[ext_resource type="Script" path="res://scripts/wave_runner.gd" id="6_waves"]
+[ext_resource type="Script" path="res://scripts/wave_hud.gd" id="7_hud"]
+[ext_resource type="Script" path="res://scripts/health_bar.gd" id="9_health"]
+[ext_resource type="Resource" path="res://data/levels/woodland.tres" id="8_level"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
+level = ExtResource("8_level")
 
 [node name="Battlefield" parent="." instance=ExtResource("2_field")]
 
+[node name="WaveRunner" type="Node" parent="." node_paths=PackedStringArray("spawner")]
+script = ExtResource("6_waves")
+spawner = NodePath("../Battlefield/Spawner")
+
 [node name="HandLayer" type="CanvasLayer" parent="."]
+
+[node name="WaveHud" type="Control" parent="HandLayer"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("7_hud")
 
 [node name="Hand" type="Control" parent="HandLayer"]
 layout_mode = 3
@@ -29,6 +44,12 @@ layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("4_mana")
+
+[node name="HealthBar" type="Control" parent="HandLayer"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("9_health")
 
 [node name="MessageLayer" type="CanvasLayer" parent="."]
 layer = 2

@@ -55,17 +55,17 @@ These defaults make the first slice implementable. They are not final game balan
 
 | Setting | Initial value |
 | --- | --- |
-| Prototype deck | 16 common, base Archer Tower cards |
-| Starting mana | 8 |
+| Prototype deck | 13 cards: 4 Archer Tower, 2 Cannon Tower, 2 Fireball, 2 Upgrade, 2 Heal, 1 Barricade (changed from 16 Archer Towers; see log) |
+| Starting mana | 5 (changed from 8, then 4; see log) |
 | Mana cap | 10 |
 | Archer Tower cost | 2 mana |
 | Mana per skeleton killed | 1 |
 | Skeleton health | 3 |
-| Skeleton castle damage | 1 |
+| Skeleton castle damage | 0.85 (changed from 1; see log) |
 | Archer Tower damage | 1 per shot |
 | Archer Tower firing interval | 1 second |
 | Archer Tower range | 180 world units at the reference resolution |
-| Skeletons per wave | 4 on wave one, increasing by 1 each wave |
+| Enemies per wave | 16 on wave one, rising to 89 on wave ten in tight clumps (see `tools/make_waves.py` and log) |
 
 **Deck and mana**
 
@@ -230,4 +230,92 @@ Run these checks as the corresponding systems become available and repeat the co
 - 2026-10-11 — Goblins and the Cannon Tower (extra content requested by the user ahead of the milestone order; milestones 2–4 still open). Tuning, at the user's request: skeleton health changed from 3 to 2 (two arrows). Goblins have 3 health (three arrows). The Cannon Tower costs 3 mana, deals 3 damage every 2.5 s, has the same 180 range, and fires cannonballs at 300 units/s, so it one-shots both enemies. Shared code: `Enemy` (`scripts/enemy.gd`, formerly `skeleton.gd`) drives any enemy, and its art comes from an `EnemyBody` subclass (`skeleton_body.gd`, new `goblin_body.gd`). `Tower` (`scripts/tower.gd`) holds targeting and cooldown for `ArcherTower` and the new `CannonTower`. The goblin (`scenes/goblin.tscn`, `data/goblin.tres`) is small and green, with long ears and a club. It waddles, swings at the gate, and topples over backward when killed. The Cannon Tower (`scenes/cannon_tower.tscn`, `data/cannon_tower.tres`) is a stone keep drawn by `tools/draw_cannon_tower.py` in the wooden tower's style. Its iron cannon is drawn in code: it turns toward its target, recoils, and flashes and smokes when firing. `Cannonball` (`scripts/cannonball.gd`) lobs in an arc, hits once, and bursts into dust; if its target is already gone it lands harmlessly. The cannon card (`assets/cards/cannon_tower.png`, `scenes/cannon_card.tscn`) is made by `tools/edit_cannon_card.py` from the archer card's source painting. The tool paints out the archer and adds an iron cannon with muzzle flash and smoke, a powder keg, a cannonball banner emblem, cost 3, and new title, description, icon, and stats (3.0 damage, 0.6 attack speed, 5.0 range). The test trickle now picks skeletons or goblins at random, and the test hand holds two Archer and two Cannon cards. Known gap: the archer card's printed 1.4 attack speed doesn't match its in-game one shot per second, so the cannon's 0.6 is only in proportion. Validated with scripted runs at 720 × 1560. With three archer towers and two cannon towers, all 20 enemies (14 goblins, 6 skeletons) died exactly once and mana reached 10. Playing a Cannon card spent 3 mana and placed a cannon tower with the card's stats. Screenshots and a close-up pose gallery of both enemies and the cannon were reviewed.
 - 2026-10-11 — Wave 1 and battle banners (milestone 5 started; still open). The random test trickle is gone. `EnemySpawner` now plays a `WaveConfig` (`scripts/wave_config.gd`), which is a list of `WaveGroup`s (`scripts/wave_group.gd`). Each group has a pause before it, spacing between enemies, and an ordered list of enemy scenes. `data/waves/wave_1.tres` sends 1 skeleton, then 2 skeletons, then 2 skeletons and a goblin, then a final group of 4 skeletons and 2 goblins (12 enemies). `main.gd` runs the phases. Preparing shows "Enemies Gathering" and "Prepare for Battle". After 10 s, combat shows "Enemies Attacking!" and starts the wave. When every enemy has been sent and none are left walking, cleared shows "Wave N Defeated". Messages come from `Banner` (`scripts/banner.gd`, on its own CanvasLayer), which queues centered text on a dark ribbon that fades out at the screen edges, in a bold serif system font. Tuning: preparation is 10 s instead of 15 at the user's request. Only wave 1 exists; there's no next wave, castle HUD, defeat, or retry yet. Validated with a scripted run at 720 × 1560 (two archer towers, one cannon tower): the banners appeared at 0 s, 2.8 s, and 10 s. Enemies spawned from 11 s in groups of 1/2/3/6, all 12 died, and "Wave 1 Defeated" appeared the moment the last one fell. Screenshots of each banner were reviewed.
 - 2026-10-11 — Debug restart button. A temporary "Restart" button sits in the top-right corner, below the notch (`_add_restart_button` in `main.gd`). It reloads the main scene, so the run starts over from scratch. Remove it with the other debug controls in milestone 6. Validated with a scripted run. Mid-combat (cannon placed, 5 mana, 3 cards, 1 enemy walking), pressing it gave a fresh preparation phase: 8 mana, 4 cards, no towers, no enemies.
+- 2026-10-12 — Ten-wave level, deck, new cards and enemies, and castle health (milestones 2, 4, and 5 mostly done; milestones stay open until the iOS simulator check).
+  - **Level data:** A level is now one `LevelConfig` resource (`scripts/level_config.gd`, `data/levels/woodland.tres`). It holds 10 waves (`data/levels/woodland/wave_01–10.tres`), the deck, hand size, starting and max mana, castle health, and preparation time. `main.gd` reads everything from its exported `level`.
+  - **Code split:** `WaveRunner` (`scripts/wave_runner.gd`) owns the preparation → combat → cleared loop and the active-enemy count. `Deck` (`scripts/deck.gd`) owns the draw and discard piles. `Castle` (`scripts/castle.gd`) owns castle health. `main.gd` coordinates mana, the hand, card play, and results.
+  - **Banners:** Each wave announces "Wave N Incoming" (`WaveConfig.announcement` overrides it, so wave 10 says "Final Wave"), then "Prepare for Battle", then "Enemies Attacking!" and "Wave N Defeated". The level ends with "Victory!" or "Defeat" / "The Castle Has Fallen".
+  - **HUD:** `CastleHud` (`scripts/castle_hud.gd`) shows castle health, "Wave N / 10", and the preparation countdown in the top left.
+  - **Cards:** Cards are data now. `CardData` (`scripts/cards/`) has targeting and `play` hooks, with subclasses for towers, Fireball, Upgrade, and Heal. Definitions live in `data/cards/*.tres`. One generic `scenes/card.tscn` replaces the per-card scenes.
+  - **Deck tuning, at the user's request:** The deck is 12 cards instead of 16: 4 Archer Tower, 2 Cannon Tower, 2 Fireball, 2 Upgrade, and 2 Heal.
+    - Fireball costs 3 and deals 3 damage to every enemy within 70 units, anywhere on the map.
+    - Upgrade costs 3 and gives a tower +50% attack rate (fire interval ÷ 1.5), once per tower. An upgraded tower shows a gold badge.
+    - Heal costs 2 and restores 5 castle health, up to 20. The castle glows while Heal is aimed, and dropping or tapping anywhere on the battlefield casts it, because the raised card covers the castle.
+    - Heal at full health, and Upgrade with no upgradeable tower, shake and spend nothing.
+  - **Hand:** The hand draws to 4 at the start of every preparation phase, and unplayed cards stay. Played cards go to the discard pile, which is reshuffled when the draw pile runs out. Drawn cards slide in.
+  - **Gate attacks:** Enemies no longer vanish at the gate. They stay there, still targetable, and strike the castle every `EnemyStats.attack_interval` until killed. Castle health at 0 is immediate defeat: spawns, timers, enemies, and card play stop, and the debug Restart button retries.
+  - **Enemy tuning, provisional:**
+    - Skeleton: 2 health, speed 85, 1 damage every 1.5 s, 0.1 mana.
+    - Goblin: 3 health, speed 85, 1 damage every 1.2 s, 0.1 mana.
+    - Big goblin (new; `scenes/big_goblin.tscn`, the goblin art at 1.5× with darker colors): 8 health, speed 70, 2 damage every 1.5 s, 0.3 mana.
+    - Giant (new; `scenes/giant.tscn`, procedural art in `scripts/giant_body.gd`): 25 health, speed 50, 4 damage every 2.5 s, 1.0 mana.
+  - **Wave tuning, provisional:** Wave 1 is unchanged. Each later wave has more enemies and shorter gaps, in groups that build to a final horde. Counts per wave are skeletons / goblins / big goblins / giants:
+    - Waves 1–3: 9/3, 10/5, 9/8.
+    - Waves 4–8: 9/6/2, 9/8/3, 8/9/4, 9/10/5, 9/11/6.
+    - Waves 9–10: 10/12/5/1, then 11/14/6/2.
+    Giants appear only in waves 9 and 10.
+  - **Card art:** `tools/make_spell_cards.py` builds the Fireball, Upgrade, and Heal cards from the archer card's painting.
+  - **Validation:** Scripted runs at 720 × 1560 all passed.
+    - Deck: 12 cards survive repeated draw and discard with no loss or duplication, and drawing with both piles empty returns null.
+    - Cards:
+      - Archer placement spends 2. A path cell or an occupied cell is rejected with nothing spent.
+      - Heal is rejected at full health, gives 13 → 18 → 20 (capped), and is rejected when dropped on the hand.
+      - Upgrade on an empty cell is rejected, an upgrade sets the interval to 0.667, and a second upgrade is rejected.
+      - The cannon is unaffordable at 1 mana.
+      - Fireball killed 3 grouped skeletons once each for +0.3 mana and left a distant goblin untouched.
+    - Defeat: With no towers, the first skeleton struck at a 1.5 s interval. Health fell 20 → 0 in 20 hits, then the battle stopped: no further spawns, waves stopped, and cards blocked.
+    - Victory: A meadow full of upgraded towers won all 10 waves. Every wave ended with nothing pending or alive. The banners matched, giants spawned only in waves 9 (1) and 10 (2), and all 213 enemies died exactly once. The two unplayed cards stayed in hand across the wave 1 → 2 refill.
+    - Retry: After both victory and defeat, retry gave 20 health, 8 mana, 4 cards, wave 1, and no towers or enemies.
+    - Screenshots of the new enemies, Fireball, the targeting highlights, the HUD, and the cards were reviewed.
+  - **Not yet done:** Not tested on the iOS simulator. Pacing toward the 15-second combat target has not been tuned, and later waves run longer.
+- 2026-10-12 — Bigger, denser waves (tuning, at the user's request; milestones unchanged).
+  - **Waves:** Wave files are now generated by `tools/make_waves.py` from a compact table of groups (pause, spacing, counts per type). The script spreads tougher enemies evenly through each group. Enemies per wave rose from 12–33 to 16, 22, 28, 34, 40, 47, 54, 62, 70, and 79. Spacing inside groups is 0.2–0.45 s instead of 0.45–0.7 s, so groups arrive as tight clumps. Big goblins still start at wave 4, and giants still appear only in waves 9 (1) and 10 (2).
+  - **Enemies:** Bodies are 1.3× larger (big goblin 1.95×, so it stays 1.5× a goblin). Speeds rose about 10%: skeleton and goblin 93, big goblin 77, giant 55. The spawner's sideways spread is 20 px (was 12), and the gate crowd depth is 60 px (was 36), so clumps walk abreast and spread out at the gate.
+  - **Preparation:** 7 s instead of 10.
+  - **Validation:** At 720 × 1560, the scripted win run cleared all 10 waves (452 enemies, each died once) with matching banners and a clean retry. The defeat run still fell at 0 with one hit per strike. Wave 10 crowd screenshots were reviewed. Winnability with a real 12-card deck is untested.
+- 2026-10-12 — Right-edge health bar, wave panel, castle turrets, Discard, and starting mana (requested by the user; milestones unchanged).
+  - **Health bar:** Castle health is now a vertical bar on the right edge, styled like the mana bar. It has a red fill, a notch per point, and a gold-rimmed heart cap showing the number. It pulses red when the castle is struck and green when healed. Both bars share the new `Gauge` base (`scripts/gauge.gd`); `HealthBar` (`scripts/health_bar.gd`) and `ManaBar` draw only their fill colors and cap. The health bar sits above the mana bar, and both shrink (up to 470 tall) to fit between the Restart button and the hand.
+  - **Wave panel:** The top-left panel (`WaveHud`, `scripts/wave_hud.gd`, replacing `castle_hud.gd`) now shows only "Wave N / 10", with the countdown or phase on its own line below.
+  - **Castle turrets:** The two painted turrets on the castle wall each shoot arrows (`CastleTurret`, `scripts/castle_turret.gd`, two nodes under `Castle` in `battlefield.tscn`). Stats are in `data/castle_turret.tres`: 0.25 damage (a quarter of an Archer Tower's), 1 shot per second, range 180. They draw nothing; the map shows the turrets. Damage is now fractional: `TowerStats.damage`, projectile damage, and enemy health are floats.
+  - **Discard:** Selecting a card shows a Discard button above the raised card. It sends the card to the discard pile without spending mana. Tapping a card now raises it even when it can't be played (it still shakes, and the mana bar flashes if mana is short), so unaffordable cards can be discarded. Dragging an unplayable card is still rejected.
+  - **Tuning:** Starting mana changed from 8 to 4 at the user's request.
+  - **Validation:** At 720 × 1560, a scripted check confirmed the following:
+    - The run starts with 4 mana. The health bar sits above the mana bar on the right edge, below Restart and clear of the hand.
+    - Discarding an affordable card, and a card selected at 0 mana, removed one card into the discard pile and spent nothing. The button showed only while a card was selected.
+    - With no towers, the two turrets took a goblin near the gate down 1.5 health in 3 s, all in quarter hits, and killed it.
+    - The card, deck, full-win, and defeat runs still passed, and retry gave 20 health and 4 mana.
+    - Screenshots of the new layout and the Discard button were reviewed.
+- 2026-10-12 — Health bar on the left and a ruby heart (requested by the user; milestones unchanged). The castle health bar now sits on the left edge, and the mana bar stays on the right. Since they no longer stack, each bar is up to 470 tall and centered between the top HUD and the hand. The heart cap is now a texture, `assets/ui/heart_gem.png`, drawn by `tools/draw_heart_gem.py` (numpy, scipy, Pillow) in the mana gem's style: a faceted ruby with a flat heart-shaped table, pale cut lines, a glint, and a bevelled gold rim. The health number is drawn over it, and the heart brightens when the castle is struck and tints green on a heal. Validated with screenshots at 720 × 1280 and 720 × 1560: the bars mirror each other, with no overlap with the wave panel, Restart button, or hand. Also built with `run_ios_simulator.sh` and checked on the iPhone 17 simulator, where the layout matched.
+- 2026-10-12 — Physical iPhone builds (tooling; milestones unchanged). `run_ios_device.sh` exports the project like the simulator script, builds for the connected, paired iPhone, signs with automatic provisioning, installs, and launches. It defaults to the free Personal Team `JZ82P2C5W7` and the bundle ID `com.woodale.towerbound`; set `TEAM_ID`, `BUNDLE_ID`, or `DEVICE_ID` to override them. Free-team builds stop opening after 7 days, and rerunning the script fixes that. The first install needs the developer profile trusted under Settings → General → VPN & Device Management. Validated: the app built, installed, and launched on an iPhone 15 Pro (iOS 26.6.1). Gameplay on the phone has not been checked yet.
+- 2026-10-12 — Starting mana changed from 4 to 5 at the user's request (`starting_mana` in `data/levels/woodland.tres`; milestones unchanged).
+- 2026-10-12 — Gentler castle attacks (tuning, at the user's request; milestones unchanged). Enemies at the gate now strike about 20% less often, so they deal about 17% less damage per second. Damage per hit is unchanged. New `attack_interval` values: skeleton 1.8 s (was 1.5), goblin 1.45 s (was 1.2), big goblin 1.8 s (was 1.5), giant 3.0 s (was 2.5).
+- 2026-10-12 — Discard button beside the card and richer kill rewards (requested by the user; milestones unchanged).
+  - **Discard:** The Discard button now sits beside the raised card instead of above it. It goes on the side facing the middle of the screen, near the card's top, so it stays clear of the tucked hand.
+  - **Tuning:** Mana from kills is tripled: skeleton and goblin 0.3 (was 0.1), big goblin 0.9 (was 0.3), giant 3.0 (was 1.0).
+  - **Validation:** At 720 × 1560, a scripted run selected the left, middle, and right cards. The button appeared beside each one without leaving the screen. A screenshot was reviewed, and the run started with 5 mana. The run printed no errors.
+- 2026-10-12 — Skeletons invisible on the iPhone (bug fix; milestones unchanged). On the iPhone 15 Pro, skeletons drew only their shadow. Exported builds on the phone loaded `SkeletonBody`'s `const PILE_LIMBS: Array[PackedVector2Array]` (nested `[a, b]` literals) as eight empty arrays, so `_draw` failed with an out-of-bounds error right after the shadow. Neither the desktop nor the simulator build showed this. The bone-pile table is now `static var _pile_limbs` with explicit `PackedVector2Array([...])` entries. Debugging tip: Godot errors on iOS don't reach the `devicectl --console` output. To see them, temporarily set `debug/file_logging/enable_file_logging=true` and pull `Documents/logs/godot.log` with `xcrun devicectl device copy from --domain-type appDataContainer`. Validated on the phone with an in-game screenshot: skeletons and goblins both draw, and the log has no script errors.
+- 2026-10-12 — Zombies (new enemy, requested by the user; milestones unchanged).
+  - **Behavior:** A zombie gets back up once after being killed. It falls on its face, lies still, twitches, and stands up 2 s after falling with full health. Then it keeps walking, or keeps striking if it was at the gate. While down it can't be targeted or hurt, and arrows aimed at it land harmlessly. Only the second death emits `died`, so the mana reward and the wave's enemy count happen once. If the battle ends while a zombie is down, it stays down.
+  - **Code:** `EnemyStats` has new `revives` and `revive_delay` fields, so any enemy can revive. `Enemy` has a new `DOWNED` state. A downed enemy stays in the "enemies" group so a battle halt still reaches it, but `is_alive()` is false. The art is in `scripts/zombie_body.gd`: a hunched grey-green corpse in a torn shirt, arms reaching forward, dragging its back leg, and swiping with its claws at the gate. After rising, its back arm hangs limp. `EnemyBody.risen` tells the art it has risen.
+  - **Tuning, provisional:** Zombie (`data/zombie.tres`, `scenes/zombie.tscn`): 3 health, speed 78 (skeletons are 93), 1 damage every 1.8 s, 0.5 mana, 1 revive after 2 s.
+  - **Waves:** `tools/make_waves.py` adds zombies on top of the existing enemies, starting at wave 3: 2, 2, 3, 4, 5, 6, 7, and 10 in waves 3–10. Waves now have 16, 22, 30, 36, 43, 51, 59, 68, 77, and 89 enemies.
+  - **Validation:** A scripted headless run checked the following:
+    - The first kill left the zombie downed. It emitted no `died`, granted no mana, and the wave still counted it as active. A hit while it was down did nothing.
+    - It stood up 2 s after falling with full health and walked on.
+    - The second kill emitted `died` once, granted 0.5 mana, and lowered the active count to 0.
+    - A zombie killed at the gate got back up and kept striking.
+    - A zombie downed when the battle ended stayed down.
+    - A pose gallery and an in-game screenshot at 720 × 1560 were reviewed.
+    - Full-run winnability with zombies was not retested, and it was not checked on the iOS simulator or the phone.
+- 2026-10-12 — Discard rework, Barricade card, and softer enemy hits (requested by the user; milestones unchanged).
+  - **Discard:** The Discard button now sits in the bottom-left corner, just above the tucked hand; the health and mana bars end above it. Pressing it arms discard mode: the button reads "Cancel", every card gets a red outline, and the next card tapped goes to the discard pile without spending mana. Escape, the button, or a tap on the battlefield backs out. Only one discard is allowed per wave; the button greys out once it's used and comes back at the next preparation phase. Tapping an unplayable card no longer raises it (it only shakes), since discarding no longer needs a selected card. The button sits behind the hand, so a raised card covers it.
+  - **Barricade card:** Costs 2 and puts a spiked wooden barricade with 5 health across the road (`BarricadeCardData`, `data/cards/barricade.tres`). A drop snaps to the nearest point on the road. It's invalid more than 80 map px from the road, within 160 px of the Badlands gate or 200 px of the castle end, or within 110 px of another barricade; the preview turns red there. `BarricadeLayer` (`scripts/barricade_layer.gd`, under `BuildGrid` so it y-sorts with enemies) owns placement and the preview. `Barricade` (`scripts/barricade.gd`) is drawn in code, shows a health bar once hit, and topples apart when broken. Enemies that walk into a standing barricade enter a new `BLOCKED` state: they stop 22–62 px short of it and strike it with their castle damage on their attack interval. When it breaks, they walk on. A zombie downed at a barricade goes back to striking it when it gets up. Enemies already past a barricade when it's placed aren't affected. The deck now has 13 cards, including one Barricade. The card art comes from `tools/make_spell_cards.py`, which can now build a single card (`python tools/make_spell_cards.py barricade`).
+  - **Tuning:** Enemy damage is 15% lower: skeleton, goblin, and zombie 0.85 (was 1), big goblin 1.7 (was 2), and giant 3.4 (was 4). Castle health is now fractional. The heart shows it rounded up, so it reads 0 only once the castle falls.
+  - **Validation:** A scripted run at 720 × 1560 checked the following:
+    - Discard mode outlined all four cards. Discarding left 3 cards and 1 card in the discard pile, with mana unchanged at 5. After that the button was disabled and couldn't be armed again.
+    - Barricade snapping accepted a road point and rejected a point off the road, a point near the gate, and a second barricade 50 px away.
+    - Wave 1 skeletons stopped at the barricade and struck it from 5 down to 4.15 (one 0.85 hit). It broke, and they walked on.
+    - Castle hits took health from 20 to 14.05 in steps of 0.85.
+    - Screenshots of discard mode, the used button, and a close-up of skeletons at the barricade were reviewed.
+    - The project loads with no script errors.
+    - Not yet checked: the iOS simulator or phone, and a full ten-wave run with these changes.
 - Add subsequent entries with the milestone, completed behavior, validation performed, and any tuning changes with their reason.

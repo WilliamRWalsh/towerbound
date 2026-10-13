@@ -32,7 +32,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	super(delta)
-	if _projectiles:
+	if _projectiles and can_fire():
 		var target := find_target()
 		if target:
 			var want := (target.global_position - _gun.global_position).angle()

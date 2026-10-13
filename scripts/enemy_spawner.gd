@@ -8,7 +8,7 @@ signal finished
 
 @export var path: Path2D
 ## Sideways jitter in map pixels so a group doesn't walk in single file.
-@export var spread := 12.0
+@export var spread := 20.0
 
 ## False from `start` until the wave's last enemy has been sent.
 var done := true

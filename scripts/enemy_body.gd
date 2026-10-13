@@ -35,6 +35,11 @@ var flash := 0.0:
 	set(value):
 		flash = value
 		queue_redraw()
+## True once the enemy has got back up after being killed (zombies only).
+var risen := false:
+	set(value):
+		risen = value
+		queue_redraw()
 ## Fraction of health left; the bar shows only once the enemy has been hit.
 var health_ratio := 1.0:
 	set(value):
@@ -43,10 +48,10 @@ var health_ratio := 1.0:
 
 
 ## Thin health bar centered above the head, at `top` (negative, above the feet).
-func draw_health_bar(top: float) -> void:
+func draw_health_bar(top: float, width := 24.0) -> void:
 	if health_ratio >= 1.0 or death > 0.0:
 		return
-	var bar := Rect2(-12, top, 24, 4)
+	var bar := Rect2(-width * 0.5, top, width, 4)
 	draw_rect(bar.grow(1.5), Color(0.08, 0.05, 0.05, 0.85))
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * health_ratio, bar.size.y)), Color(0.9, 0.22, 0.16))
 

@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/wave_config.gd" id="1_wave"]
+[ext_resource type="Script" path="res://scripts/wave_group.gd" id="2_group"]
+[ext_resource type="PackedScene" path="res://scenes/skeleton.tscn" id="3_skeleton"]
+[ext_resource type="PackedScene" path="res://scenes/goblin.tscn" id="4_goblin"]
+[ext_resource type="PackedScene" path="res://scenes/zombie.tscn" id="7_zombie"]
+
+[sub_resource type="Resource" id="Resource_group1"]
+script = ExtResource("2_group")
+pause_before = 1.0
+spacing = 0.35
+enemies = Array[PackedScene]([ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton")])
+
+[sub_resource type="Resource" id="Resource_group2"]
+script = ExtResource("2_group")
+pause_before = 2.5
+spacing = 0.3
+enemies = Array[PackedScene]([ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton")])
+
+[sub_resource type="Resource" id="Resource_group3"]
+script = ExtResource("2_group")
+pause_before = 2.5
+spacing = 0.28
+enemies = Array[PackedScene]([ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("7_zombie"), ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton"), ExtResource("4_goblin")])
+
+[sub_resource type="Resource" id="Resource_group4"]
+script = ExtResource("2_group")
+pause_before = 3.0
+spacing = 0.25
+enemies = Array[PackedScene]([ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("7_zombie"), ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton"), ExtResource("4_goblin"), ExtResource("3_skeleton"), ExtResource("4_goblin")])
+
+[resource]
+script = ExtResource("1_wave")
+groups = Array[ExtResource("2_group")]([SubResource("Resource_group1"), SubResource("Resource_group2"), SubResource("Resource_group3"), SubResource("Resource_group4")])

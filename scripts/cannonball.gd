@@ -12,7 +12,7 @@ const ARC_MAX := 90.0
 const IMPACT_TIME := 0.3
 
 var _target: Enemy
-var _damage := 1
+var _damage := 1.0
 var _speed := 0.0
 var _from := Vector2.ZERO
 var _aim := Vector2.ZERO
@@ -23,7 +23,7 @@ var _impact := -1.0
 
 
 ## Fires a cannonball from a canvas position. `speed` is in reference units per second.
-static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: int, speed: float) -> Cannonball:
+static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: float, speed: float) -> Cannonball:
 	var ball := Cannonball.new()
 	ball._target = target
 	ball._damage = damage

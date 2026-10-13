@@ -1,128 +1,216 @@
 extends Node
-## Battle screen prototype: the woodland map, its build grid, and a hand of tower cards.
-## Owns placement state; cards, hand, and grid only report input and display previews.
+## Battle screen coordinator for one level: the battlefield, the hand drawn from the level's deck,
+## mana, and the result. Owns mana, the deck, and card play; the WaveRunner owns the wave phases
+## and the Castle owns castle health. Cards, hand, grid, and HUD only report input and display.
 
-## Test hand until the deck arrives: two of each tower card.
-const HAND: Array[PackedScene] = [
-	preload("res://scenes/card.tscn"), preload("res://scenes/card.tscn"),
-	preload("res://scenes/cannon_card.tscn"), preload("res://scenes/cannon_card.tscn"),
-]
-const STARTING_MANA := 8
-const MAX_MANA := 10
-const MANA_BAR_HEIGHT := 470.0
-const CASTLE_HEALTH := 20
-## Seconds from the start of the battle until the first wave marches.
-const PREPARE_TIME := 10.0
-const FIRST_WAVE: WaveConfig = preload("res://data/waves/wave_1.tres")
-
+const CARD_SCENE := preload("res://scenes/card.tscn")
+## Tallest the health and mana bars get; they shrink on shorter screens to fit.
+const BAR_MAX_HEIGHT := 470.0
+const HUD_MARGIN := 14.0
 const RESTART_BUTTON_SIZE := Vector2(130, 56)
+const DISCARD_BUTTON_SIZE := Vector2(140, 54)
+## Discards allowed per wave, refilled at the start of each preparation phase.
+const DISCARDS_PER_WAVE := 1
 
-enum Phase { PREPARING, COMBAT, CLEARED }
+enum Result { NONE, VICTORY, DEFEAT }
 
-@onready var _grid: BuildGrid = $Battlefield/BuildGrid
+@export var level: LevelConfig
+
+@onready var _field: Battlefield = $Battlefield
+@onready var _waves: WaveRunner = $WaveRunner
 @onready var _hand: Hand = $HandLayer/Hand
 @onready var _mana_bar: ManaBar = $HandLayer/ManaBar
-@onready var _spawner: EnemySpawner = $Battlefield/Spawner
+@onready var _health_bar: HealthBar = $HandLayer/HealthBar
+@onready var _hud: WaveHud = $HandLayer/WaveHud
 @onready var _banner: Banner = $MessageLayer/Banner
 
-var _castle_health := CASTLE_HEALTH
-var _phase := Phase.PREPARING
-var _wave_number := 1
-## Enemies of the current wave still walking (spawned, not yet killed or at the castle).
-var _active_enemies := 0
-var _prepare_timer: Timer
+var _deck: Deck
+var _result := Result.NONE
+var _active_card: Card = null
 var _restart_button: Button
+## Bottom-left, above the hand. Pressing it arms discard mode: the next card tapped is thrown
+## away without being played.
+var _discard_button: Button
+var _discarding := false
+var _discards_left := DISCARDS_PER_WAVE
 
-var _active_card: TowerCard = null
-## Fractional, since kills grant a tenth of a mana.
+## Fractional, since kills grant tenths of a mana.
 var _mana := 0.0:
 	set(value):
-		_mana = snappedf(clampf(value, 0.0, MAX_MANA), 0.01)
+		_mana = snappedf(clampf(value, 0.0, level.max_mana), 0.01)
 		_mana_bar.value = _mana
 		for card in _hand.get_cards():
-			card.affordable = _has_mana(card.cost)
+			card.affordable = _has_mana(card.data.cost)
 
 
 func _ready() -> void:
-	for card_scene in HAND:
-		var card: TowerCard = card_scene.instantiate()
+	_deck = Deck.new(level.deck)
+	_mana_bar.max_value = int(level.max_mana)
+	_mana = level.starting_mana
+	_mana_bar.reset(_mana)
+	var castle := _field.castle
+	castle.health_changed.connect(func(health: float, max_health: int) -> void: _health_bar.set_health(health, max_health))
+	castle.destroyed.connect(_on_castle_destroyed)
+	castle.reset(level.castle_health)
+	_health_bar.set_health(castle.health, castle.max_health, false)
+	_add_restart_button()
+	_add_discard_button()
+	get_viewport().size_changed.connect(_fit_hud_to_safe_area)
+	_fit_hud_to_safe_area()
+	_waves.preparation_started.connect(_on_preparation_started)
+	_waves.combat_started.connect(_on_combat_started)
+	_waves.wave_cleared.connect(_on_wave_cleared)
+	_waves.level_cleared.connect(_on_level_cleared)
+	_waves.enemy_spawned.connect(_on_enemy_spawned)
+	_waves.start(level)
+
+
+func _process(_delta: float) -> void:
+	_update_discard_button()
+	match _result:
+		Result.VICTORY:
+			_hud.set_status("Victory")
+		Result.DEFEAT:
+			_hud.set_status("Defeat")
+		_:
+			if _waves.phase == WaveRunner.Phase.PREPARING:
+				_hud.set_status("Battle in %d" % ceili(_waves.prepare_time_left()))
+			else:
+				_hud.set_status("Fighting")
+
+
+func _on_preparation_started(number: int, wave: WaveConfig) -> void:
+	_hud.set_wave(number, _waves.wave_count())
+	var final := number == _waves.wave_count()
+	_banner.show_message(wave.announcement_for(number), Banner.Style.DANGER if final else Banner.Style.NOTICE)
+	_banner.show_message("Prepare for Battle")
+	_discards_left = DISCARDS_PER_WAVE
+	_refill_hand()
+
+
+func _on_combat_started(_number: int) -> void:
+	_field.grid.begin_wave()
+	_banner.show_message("Enemies Attacking!", Banner.Style.DANGER)
+
+
+func _on_wave_cleared(number: int) -> void:
+	_field.grid.end_wave()
+	_banner.show_message("Wave %d Defeated" % number, Banner.Style.VICTORY)
+
+
+func _on_level_cleared() -> void:
+	_end_battle(Result.VICTORY)
+	_banner.show_message("Victory!", Banner.Style.VICTORY)
+
+
+## Defeat takes precedence: it ends the battle at once, even mid-wave.
+func _on_castle_destroyed() -> void:
+	_end_battle(Result.DEFEAT)
+	_banner.clear()
+	_banner.show_message("Defeat", Banner.Style.DANGER)
+	_banner.show_message("The Castle Has Fallen", Banner.Style.DANGER)
+
+
+## Stops spawning, timers, enemies, and card play. Restart starts a fresh run.
+func _end_battle(result: Result) -> void:
+	if _result != Result.NONE:
+		return
+	_result = result
+	_waves.stop()
+	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
+		enemy.halt()
+	_cancel_placement()
+	_set_discarding(false)
+
+
+## Draws until the hand is full; unplayed cards stay. Stops quietly if the deck runs dry.
+func _refill_hand() -> void:
+	while _hand.get_cards().size() < level.hand_size:
+		var data := _deck.draw()
+		if data == null:
+			return
+		var card: Card = CARD_SCENE.instantiate()
+		card.data = data
 		card.tapped.connect(_on_card_tapped)
 		card.drag_started.connect(_on_card_drag_started)
 		card.drag_moved.connect(_on_card_drag_moved)
 		card.drag_released.connect(_on_card_drag_released)
 		_hand.add_card(card)
-	_mana_bar.max_value = MAX_MANA
-	_mana = STARTING_MANA
-	_mana_bar.reset(_mana)
-	_add_restart_button()
-	get_viewport().size_changed.connect(_fit_hand_to_safe_area)
-	_fit_hand_to_safe_area()
-	_spawner.enemy_spawned.connect(_on_enemy_spawned)
-	_spawner.finished.connect(_check_wave_end)
-	_prepare_timer = Timer.new()
-	_prepare_timer.one_shot = true
-	_prepare_timer.timeout.connect(_start_wave)
-	add_child(_prepare_timer)
-	_start_preparation()
+		card.affordable = _has_mana(data.cost)
+		card.discard_target = _discarding
 
 
-func _start_preparation() -> void:
-	_phase = Phase.PREPARING
-	_banner.show_message("Enemies Gathering")
-	_banner.show_message("Prepare for Battle")
-	_prepare_timer.start(PREPARE_TIME)
+func _on_enemy_spawned(enemy: Enemy) -> void:
+	enemy.died.connect(_on_enemy_died)
+	enemy.attacked_castle.connect(_on_enemy_attacked_castle)
 
 
-func _start_wave() -> void:
-	_phase = Phase.COMBAT
-	_banner.show_message("Enemies Attacking!", Banner.Style.DANGER)
-	_spawner.start(FIRST_WAVE)
-
-
-## The wave is over once everything has been sent and nothing is left walking.
-func _check_wave_end() -> void:
-	if _phase != Phase.COMBAT or not _spawner.done or _active_enemies > 0:
+## Enemies emit `died` exactly once, so each kill pays out once. The mana is granted now;
+## the wisp only animates it into the bar.
+func _on_enemy_died(enemy: Enemy) -> void:
+	if _result != Result.NONE:
 		return
-	_phase = Phase.CLEARED
-	_banner.show_message("Wave %d Defeated" % _wave_number, Banner.Style.VICTORY)
+	var granted := minf(enemy.stats.mana_reward, level.max_mana - _mana)
+	if granted > 0.0:
+		_mana_bar.send_wisp(enemy.aim_point(), granted)
+		_mana += granted
+
+
+func _on_enemy_attacked_castle(_enemy: Enemy, damage: float) -> void:
+	if _result == Result.NONE:
+		_field.castle.take_damage(damage)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _discarding:
+		# Escape or a tap anywhere off the cards backs out of discard mode.
+		if event.is_action_pressed("ui_cancel") or (event is InputEventMouseButton and event.pressed):
+			_set_discarding(false)
+			get_viewport().set_input_as_handled()
+		return
 	if _active_card == null or _active_card.dragging:
 		return
 	if event.is_action_pressed("ui_cancel"):
 		_cancel_placement()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
-		_grid.update_pointer(event.global_position)
+		_active_card.data.update_targeting(_field, event.global_position, true)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		_grid.update_pointer(event.global_position)
-		# Tap mode: place on release; an invalid target keeps the card selected for another try.
-		if not event.pressed:
-			_try_play(_active_card, event.global_position)
+		_active_card.data.update_targeting(_field, event.global_position, true)
+		# Tap mode: play on release; an invalid target keeps the card selected for another try.
+		if not event.pressed and not _try_play(_active_card, event.global_position):
+			_check_playable(_active_card)
 		get_viewport().set_input_as_handled()
 
 
-func _on_card_tapped(card: TowerCard) -> void:
-	if _active_card == card:
+## In discard mode a tapped card is discarded; otherwise it is raised for play, or shakes if it
+## can't be played right now.
+func _on_card_tapped(card: Card) -> void:
+	if _discarding:
+		_discard(card)
+	elif _active_card == card:
 		_cancel_placement()
-	elif _can_afford(card):
+	elif _can_select(card):
 		_select(card)
 
 
-func _on_card_drag_started(card: TowerCard) -> void:
-	if _can_afford(card):
+func _on_card_drag_started(card: Card) -> void:
+	if _discarding:
+		return
+	if _can_select(card):
 		_select(card)
+	elif card == _active_card:
+		_cancel_placement()
 
 
-func _on_card_drag_moved(card: TowerCard, global_pos: Vector2) -> void:
+func _on_card_drag_moved(card: Card, global_pos: Vector2) -> void:
 	if card != _active_card:
 		return
 	_hand.drag_card_to(card, global_pos)
-	_grid.update_pointer(global_pos, not _hand.is_over_hand(global_pos))
+	card.data.update_targeting(_field, global_pos, not _hand.is_over_hand(global_pos))
 
 
-func _on_card_drag_released(card: TowerCard, global_pos: Vector2) -> void:
+func _on_card_drag_released(card: Card, global_pos: Vector2) -> void:
 	if card != _active_card:
 		_hand.layout()
 		return
@@ -131,51 +219,37 @@ func _on_card_drag_released(card: TowerCard, global_pos: Vector2) -> void:
 		_cancel_placement()
 
 
-func _on_enemy_spawned(enemy: Enemy) -> void:
-	_active_enemies += 1
-	enemy.died.connect(_on_enemy_died)
-	enemy.reached_castle.connect(_on_enemy_reached_castle)
-
-
-## Enemies emit `died` exactly once, so each kill pays out once. The mana is granted now;
-## the wisp only animates it into the bar.
-func _on_enemy_died(enemy: Enemy) -> void:
-	_active_enemies -= 1
-	var granted := minf(enemy.stats.mana_reward, MAX_MANA - _mana)
-	if granted > 0.0:
-		_mana_bar.send_wisp(enemy.aim_point(), granted)
-		_mana += granted
-	_check_wave_end()
-
-
-## No castle HUD or defeat yet; the count is logged for testing.
-func _on_enemy_reached_castle(_enemy: Enemy, damage: int) -> void:
-	_active_enemies -= 1
-	_castle_health -= damage
-	print("Castle hit: %d health left" % _castle_health)
-	_check_wave_end()
-
-
 ## Tolerates float rounding left over from adding tenths.
 func _has_mana(cost: int) -> bool:
 	return cost <= _mana + 0.001
 
 
-## Rejects unaffordable cards with a shake and a flash of the mana bar.
-func _can_afford(card: TowerCard) -> bool:
-	if _has_mana(card.cost):
-		return true
-	_hand.shake(card)
-	_mana_bar.flash_insufficient()
-	return false
+## Rejects a card that can't be played right now with a shake: not enough mana (the mana bar
+## flashes too), no valid target (e.g. Heal at full health), or the battle is over.
+func _can_select(card: Card) -> bool:
+	return _result == Result.NONE and _check_playable(card)
 
 
-func _select(card: TowerCard) -> void:
+## True when the card could be played now; otherwise shakes it (and flashes the mana bar if
+## mana is short).
+func _check_playable(card: Card) -> bool:
+	if not _has_mana(card.data.cost):
+		_hand.shake(card)
+		_mana_bar.flash_insufficient()
+		return false
+	if not card.data.can_play(_field):
+		_hand.shake(card)
+		return false
+	return true
+
+
+func _select(card: Card) -> void:
 	if _active_card:
 		_active_card.selected = false
+	_field.clear_targeting()
 	_active_card = card
 	card.selected = true
-	_grid.begin_placement(card.tower_scene, card.tower_stats)
+	card.data.begin_targeting(_field)
 	_hand.layout()
 
 
@@ -183,22 +257,82 @@ func _cancel_placement() -> void:
 	if _active_card:
 		_active_card.selected = false
 	_active_card = null
-	_grid.end_placement()
+	_field.clear_targeting()
 	_hand.layout()
 
 
-## Places the card's tower at a canvas position. On success the card leaves the hand and its
-## mana is spent, exactly once.
-func _try_play(card: TowerCard, global_pos: Vector2) -> bool:
-	if _hand.is_over_hand(global_pos) or not _has_mana(card.cost):
+## Plays the card at a canvas position. On success the card leaves the hand for the discard pile
+## and its mana is spent, exactly once. On failure nothing changes.
+func _try_play(card: Card, global_pos: Vector2) -> bool:
+	if _result != Result.NONE or _hand.is_over_hand(global_pos) or not _has_mana(card.data.cost):
 		return false
-	if not _grid.place_tower(_grid.world_to_cell(global_pos), card.tower_scene, card.tower_stats):
+	if not card.data.play(_field, global_pos):
 		return false
 	_active_card = null
-	_grid.end_placement()
+	_field.clear_targeting()
 	_hand.remove_card(card)
-	_mana -= card.cost
+	_deck.discard(card.data)
+	_mana -= card.data.cost
 	return true
+
+
+## Arms or disarms discard mode. Arming drops any selected card back into the hand.
+func _set_discarding(on: bool) -> void:
+	on = on and _result == Result.NONE and _discards_left > 0 and not _hand.get_cards().is_empty()
+	if on:
+		_cancel_placement()
+	_discarding = on
+	for card in _hand.get_cards():
+		card.discard_target = on
+	_update_discard_button()
+
+
+## Throws a card onto the discard pile without playing it. Costs no mana, but uses up the
+## wave's discard.
+func _discard(card: Card) -> void:
+	if not _discarding or _discards_left <= 0 or _result != Result.NONE:
+		return
+	_discards_left -= 1
+	_set_discarding(false)
+	_hand.discard_card(card)
+	_deck.discard(card.data)
+
+
+func _add_discard_button() -> void:
+	_discard_button = Button.new()
+	_discard_button.text = "Discard"
+	_discard_button.focus_mode = Control.FOCUS_NONE
+	_discard_button.size = DISCARD_BUTTON_SIZE
+	_discard_button.add_theme_font_size_override("font_size", 26)
+	_discard_button.add_theme_color_override("font_color", Color(1.0, 0.9, 0.62))
+	_discard_button.add_theme_color_override("font_hover_color", Color(1.0, 0.9, 0.62))
+	_discard_button.add_theme_color_override("font_pressed_color", Color(1.0, 0.75, 0.6))
+	_discard_button.add_theme_color_override("font_disabled_color", Color(0.62, 0.58, 0.52, 0.8))
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var box := StyleBoxFlat.new()
+		match state:
+			"pressed":
+				box.bg_color = Color(0.5, 0.1, 0.07, 0.95)
+			"disabled":
+				box.bg_color = Color(0.12, 0.1, 0.1, 0.75)
+			_:
+				box.bg_color = Color(0.32, 0.06, 0.05, 0.9)
+		box.border_color = Color(0.86, 0.66, 0.3) if state != "disabled" else Color(0.45, 0.38, 0.28)
+		box.set_border_width_all(2)
+		box.set_corner_radius_all(14)
+		box.shadow_color = Color(0, 0, 0, 0.4)
+		box.shadow_size = 6
+		_discard_button.add_theme_stylebox_override(state, box)
+	_discard_button.pressed.connect(func() -> void: _set_discarding(not _discarding))
+	# Behind the hand, so a raised card covers the button rather than the other way round.
+	$HandLayer.add_child(_discard_button)
+	$HandLayer.move_child(_discard_button, _hand.get_index())
+
+
+## "Cancel" while armed; greyed out once this wave's discard is used or the battle is over.
+func _update_discard_button() -> void:
+	_discard_button.text = "Cancel" if _discarding else "Discard"
+	_discard_button.disabled = not _discarding and (_discards_left <= 0 or _result != Result.NONE)
 
 
 ## Debug only: reloads the battle scene, which starts a completely fresh run.
@@ -221,15 +355,25 @@ func _add_restart_button() -> void:
 
 
 ## Lifts the hand by the bottom safe-area inset (home indicator) so cards stay reachable, and
-## centers the mana bar vertically on the right edge. Keeps the restart button below the notch.
-func _fit_hand_to_safe_area() -> void:
+## places the health bar on the left edge and the mana bar on the right, between the top HUD and
+## the hand. Keeps the HUD and restart button below the notch.
+func _fit_hud_to_safe_area() -> void:
 	var window_size := DisplayServer.window_get_size()
 	var safe := DisplayServer.get_display_safe_area()
 	var inset_px := maxf(0.0, float(window_size.y - safe.end.y)) if safe.size.y > 0 else 0.0
 	var top_inset_px := maxf(0.0, float(safe.position.y)) if safe.size.y > 0 else 0.0
 	var view := get_viewport().get_visible_rect().size
 	_hand.bottom_inset = inset_px * view.y / maxf(1.0, window_size.y)
-	_mana_bar.size = Vector2(ManaBar.GEM_SIZE, MANA_BAR_HEIGHT)
-	_mana_bar.position = Vector2(view.x - ManaBar.GEM_SIZE - 2.0, (view.y - MANA_BAR_HEIGHT) * 0.5)
 	var top_inset := top_inset_px * view.y / maxf(1.0, window_size.y)
-	_restart_button.position = Vector2(view.x - RESTART_BUTTON_SIZE.x - 14.0, top_inset + 14.0)
+	var bars_top := top_inset + HUD_MARGIN + maxf(RESTART_BUTTON_SIZE.y, WaveHud.PANEL_SIZE.y) + 24.0
+	var discard_y := view.y - _hand.bottom_inset - Hand.CARD_SIZE.y * 0.5 - DISCARD_BUTTON_SIZE.y - 24.0
+	_discard_button.position = Vector2(HUD_MARGIN, discard_y)
+	var bars_bottom := discard_y - 24.0
+	var bar_height := minf(BAR_MAX_HEIGHT, bars_bottom - bars_top)
+	var bar_y := (bars_top + bars_bottom - bar_height) * 0.5
+	_health_bar.size = Vector2(Gauge.CAP_SIZE, bar_height)
+	_health_bar.position = Vector2(2.0, bar_y)
+	_mana_bar.size = Vector2(Gauge.CAP_SIZE, bar_height)
+	_mana_bar.position = Vector2(view.x - Gauge.CAP_SIZE - 2.0, bar_y)
+	_hud.position = Vector2(HUD_MARGIN, top_inset + HUD_MARGIN)
+	_restart_button.position = Vector2(view.x - RESTART_BUTTON_SIZE.x - HUD_MARGIN, top_inset + HUD_MARGIN)

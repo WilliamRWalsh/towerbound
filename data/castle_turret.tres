@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TowerStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/tower_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+damage = 0.25
+fire_interval = 1.0
+attack_range = 180.0
+projectile_speed = 420.0
+charges = 0

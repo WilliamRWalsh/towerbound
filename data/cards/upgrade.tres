@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeCardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/cards/upgrade_card_data.gd" id="1_card"]
+[ext_resource type="Texture2D" path="res://assets/cards/upgrade.png" id="2_art"]
+
+[resource]
+script = ExtResource("1_card")
+attack_rate_bonus = 0.5
+title = "Upgrade"
+art = ExtResource("2_art")
+cost = 3

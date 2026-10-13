@@ -1,11 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://scripts/card.gd" id="1_card"]
-[ext_resource type="Texture2D" path="res://assets/cards/archer_tower.png" id="2_art"]
-[ext_resource type="PackedScene" path="res://scenes/archer_tower.tscn" id="3_tower"]
-[ext_resource type="Resource" path="res://data/archer_tower.tres" id="4_stats"]
 
-[node name="ArcherTowerCard" type="Control"]
+[node name="Card" type="Control"]
 texture_filter = 5
 layout_mode = 3
 anchors_preset = 0
@@ -13,6 +10,3 @@ offset_right = 180.0
 offset_bottom = 310.0
 mouse_default_cursor_shape = 2
 script = ExtResource("1_card")
-art = ExtResource("2_art")
-tower_scene = ExtResource("3_tower")
-tower_stats = ExtResource("4_stats")
