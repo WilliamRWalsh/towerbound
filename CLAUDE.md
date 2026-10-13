@@ -6,10 +6,10 @@ Towerbound is a fantasy game combining a trading card game with 2D tower defense
 
 This file is the project brief and implementation roadmap for agents. The milestones below are planned work, not completed features. Build them in order and keep the project runnable after each milestone.
 
-The repository currently contains a Godot 4.7 starter project using GDScript, a placeholder screen, and an iOS export preset. Preserve its portrait mobile foundation:
+The repository is a Godot 4.7 project using GDScript, with the battle prototype described in the log below and an iOS export preset. Preserve its portrait mobile foundation:
 
 - Reference viewport: 720 × 1280, with an interface that adapts to phone aspect ratios.
-- Entry scene: `scenes/main.tscn`; current entry script: `scripts/main.gd`.
+- Entry scene: `scenes/main.tscn`; its root script is `scripts/battle/battle_screen.gd`. See **Architecture** for how the code fits together.
 - Renderer: GL Compatibility.
 - Existing simulator workflow: `run_ios_simulator.sh`.
 - `build/` contains generated export output and is excluded from version control.
@@ -196,6 +196,67 @@ All milestones begin unchecked. Complete each milestone's acceptance criteria be
 - Use the existing renderer, portrait layout, and iOS export setup. Do not edit generated `.godot/` or `build/` output as source files.
 - Preserve existing user work. Record milestone completion, actual validation, and deliberate tuning changes here without claiming planned work is implemented.
 - Do not invent final rarity probabilities, economy values, or shiny/holographic bonuses; those remain future design work.
+
+## Architecture
+
+How the code is organized, for anyone adding to it. The test suite and screenshot tools below keep it honest.
+
+### Layers
+
+- **`BattleScreen`** (`scripts/battle/battle_screen.gd`, root of `scenes/main.tscn`) starts the battle for its exported `level` and keeps the display in step: wave panel, wave preview, banners, health and mana bars, mana wisps. It holds no rules.
+- **`Battle`** (`scripts/battle/battle.gd`) is the one authoritative battle state: `State.PREPARING`, `COMBAT`, `VICTORY`, `DEFEAT`.
+  - It owns the `ManaPool`, the `Deck`, the wave sequence and spawner, the count of active enemies, and kill rewards.
+  - The first result wins and halts everything.
+  - Everything else reads `state`, `can_play_cards()`, and `is_over()`, and reacts to its signals.
+- **`Battlefield`** (`scripts/battle/battlefield.gd`, `scenes/battlefield.tscn`) is the context passed to everything in the battle instead of global groups or statics. It holds:
+  - the `BuildGrid` and its `PlacementPreview`
+  - the `Castle`, the `EnemyPath`, and its `BarricadeLayer`
+  - the `ground` layer for `AreaEffect`s and the `effects` layer for projectiles and spell visuals
+  - per-battle services: `enemies` (`EnemyRegistry`), `ledger` (`DamageLedger`), and `targeting` (`TargetPlanner`)
+  - a reference to the `battle`
+- **`CardPlayController`** (`scripts/battle/card_play_controller.gd`) turns taps and drags into card plays.
+  - It refills the hand, aims, opens the upgrade chooser, and runs discard mode.
+  - It spends a card and its mana exactly once, and only when `CardData.play` succeeds.
+- **`HudLayout`** (on `HandLayer`) places the HUD around the safe area. **`DebugOverlay`** (`scenes/debug_overlay.tscn`) holds the debug Restart button; delete that node to remove it.
+
+Conventions:
+- Signals go up and calls go down.
+- Gameplay nodes get the `Battlefield` passed in or exported, never looked up through tree-wide groups.
+- Distances and speeds are tuned in world units (720 across the reference screen) and converted with `Units.px`. Cards print distances in paces (`Units.paces`, 36 world units).
+- UI fonts, panels, and buttons come from the project theme `ui/theme.tres`; shared colors come from `Palette`.
+
+### Adding content
+
+- **A card** is one `CardData` resource in `data/cards/`, with no new script unless it needs a new kind of targeting or effect. Add it to a level's `deck`. It combines:
+  - a `targeting`: `CellTargeting`, `TowerTargeting`, `AreaTargeting` (anywhere, or `on_road`), `RoadTargeting`, or `CastleTargeting`
+  - `effects`: `CardEffect` subclasses in `scripts/cards/effects/`
+  - optional `discard_effects`
+  - a `painting`, an `icon`, a `description` template, and three `stats` templates (`"{damage}|DAMAGE"`, optionally `|icon_name`)
+
+  Placeholders come from each effect's and targeting's `describe()`, so printed numbers always match the tuning. `test_card_composition.gd` builds a card from existing parts as an example.
+- **Card art:**
+  1. Paint the full card in `art/cards/<id>.png` with the tools in `tools/` (Godot ignores `art/`).
+  2. Run `python tools/export_card_faces.py` to write the shared frame, the painting, the icon, and the stat icons into `assets/cards/`.
+  3. `CardFace` draws the cost, title, description, and stats as text.
+- **An enemy** needs three things:
+  - an `EnemyStats` resource in `data/enemies/`, with `damage_taken` by type, `final_death_types`, and revives
+  - an `EnemyBody` subclass for the procedural art
+  - a scene in `scenes/enemies/` with an `Enemy` root and a `Body` child
+
+  Then add a key to `tools/make_waves.py` and regenerate the waves.
+- **A tower** needs a `TowerStats` resource in `data/towers/` that names its `projectile` scene (`scenes/projectiles/`), a scene in `scenes/towers/` whose root extends `Tower`, and a card with a `PlaceTowerEffect`.
+- **A status effect** (slow, chill, and so on) is a `StatusEffect` resource in `data/status/`, applied with `Enemy.apply_status`.
+- **A tower upgrade** is a `TowerUpgrade` subclass in `scripts/towers/upgrades/` plus a resource in `data/upgrades/`, listed on the Upgrade card's `UpgradeTowerEffect`.
+- **A ground effect** extends `AreaEffect`. Override `_tick`, then optionally `touched_by` (to react to fire or frost), and `predicted_damage_to` (so towers count its damage over time).
+- **A projectile** extends `Projectile` and implements `_advance`, `_arrive`, and `_draw`. It needs a scene in `scenes/projectiles/`.
+
+### Tests and review tools
+
+- `./run_tests.sh` runs the GUT suite (`tests/unit`, `tests/integration`) headless at a fixed 60 fps. Pass `-gselect=<file>` to run one file.
+- Integration tests drive `scenes/main.tscn` through `tests/support/battle_driver.gd`. It hosts the battle in a 720 × 1280 SubViewport, sends taps, drags, and keys, fast-forwards time, and wraps every read of battle internals. When internals move, update the driver, not the tests.
+- `godot --path . --fixed-fps 60 -s tools/capture_screens.gd -- <dir>` renders seeded reference screenshots at 720 × 1280 and 720 × 1560. It needs a display.
+- `godot --headless --path . -s tools/diff_screens.gd -- <before> <after> <diff dir>` reports how much each screenshot changed.
+- GUT (`addons/gut`) and `tests/` are excluded from the iOS export.
 
 ## Manual acceptance checklist
 
@@ -415,4 +476,28 @@ Run these checks as the corresponding systems become available and repeat the co
     - The ledger was empty after each case and after the scene was freed with arrows in flight.
     - The main scene ran headless for 300 frames with no errors.
     - Not checked in a full ten-wave run or on the iOS simulator.
+- 2026-10-13 — Architecture refactor for extendability (requested by the user; milestones unchanged, gameplay and tuning unchanged). See **Architecture** above for the result. One commit per phase on branch `refactor/architecture`:
+  - **Tests:** Added GUT 9.7.1 and a regression suite written against the old code before anything moved. It started with 71 tests and has 104 now.
+  - **Structure:** Scripts, scenes, and data were moved into folders. Added `Units`, `Palette`, and a project theme in place of StyleBoxes and SystemFonts built in code.
+  - **Battle state:** `Battle` replaced `WaveRunner` and `main.gd`'s separate result. `ManaPool` holds mana. The `Battlefield` context carries `EnemyRegistry`, `DamageLedger` (no more static ledger), and `TargetPlanner`.
+  - **`main.gd` split:** It became `BattleScreen`, `CardPlayController`, `HudLayout`, and `DebugOverlay`.
+  - **Combat:**
+    - `Hit` objects, plus `damage_taken` and `final_death_types` on `EnemyStats`.
+    - `StatusEffect` resources for chill and oil slow.
+    - Enemies strike the gate and barricades through one attack target.
+    - `Projectile` and `AreaEffect` base classes, `BurnSpec`, and fire spreading through `touched_by`.
+  - **Towers:** `TowerAmmo`, per-tower copies of stats, `TowerUpgrade` resources, `ChargePips` and `UpgradeBadge` display nodes, and `PlacementPreview` split out of `BuildGrid`.
+  - **Cards:**
+    - Cards are composed from a `CardTargeting` and `CardEffect`s, and the seven `*_card_data.gd` subclasses are gone.
+    - `heal.tres` was renamed `repair.tres`.
+    - Faces are drawn from data by `CardFace`, and `Card` was renamed `CardView`.
+    - Printed numbers now match the tuning. Archer: 1.5 damage and 1.0 attack speed (it printed 1.0 and 1.4). Cannon: 0.5 attack speed (it printed 0.6). Radius values print 1.9 (70 ÷ 36) where they were hand-typed as 2.0.
+    - The baked full cards moved to `art/cards/`, which Godot ignores.
+    - Card titles use synthetic bold, because Godot resolves Baskerville at weight 700 to the regular face. The HUD's `serif_bold.tres` has always rendered regular for the same reason.
+  - **Validation:**
+    - After every phase, the full suite passed with the phase-0 expectations unchanged, and the main scene ran headless with no errors.
+    - Seeded screenshots matched the pre-refactor baseline pixel for pixel through the card-composition step. After the card-face change, only the hand differs.
+    - New card faces were reviewed side by side with the old baked cards.
+    - iOS simulator exports were run after the `main.gd` split and after the card faces. Both reached the battle with the HUD below the Dynamic Island.
+  - **Not checked:** Raised-card text on a real iPhone (fonts come from iOS system fonts), and a manual play-through on the phone.
 - Add subsequent entries with the milestone, completed behavior, validation performed, and any tuning changes with their reason.
