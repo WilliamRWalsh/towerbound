@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_card")
 attack_rate_bonus = 0.5
+extra_charges = 1
 title = "Upgrade"
 art = ExtResource("2_art")
 cost = 3

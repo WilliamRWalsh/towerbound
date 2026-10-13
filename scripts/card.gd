@@ -9,6 +9,9 @@ signal drag_moved(card: Card, global_pos: Vector2)
 signal drag_released(card: Card, global_pos: Vector2)
 
 const DRAG_THRESHOLD := 14.0
+const BADGE_RADIUS := 15.0
+## Badge center's distance in from the card's top and right edges.
+const BADGE_INSET := 24.0
 
 @export var data: CardData
 
@@ -82,3 +85,20 @@ func _draw() -> void:
 		outline.shadow_size = 12
 		draw_style_box(outline, Rect2(Vector2.ZERO, size).grow(3))
 	draw_texture_rect(data.art, Rect2(Vector2.ZERO, size), false, Color.WHITE if affordable else Color(0.5, 0.5, 0.55))
+	_draw_damage_badge()
+
+
+## A small round badge in the top-right corner showing the damage type the card deals, so it can
+## be matched against the wave preview's weaknesses and resistances.
+func _draw_damage_badge() -> void:
+	var type := data.damage_type()
+	if type == Damage.NONE:
+		return
+	var center := Vector2(size.x - BADGE_INSET, BADGE_INSET)
+	var dim := 1.0 if affordable else 0.55
+	draw_circle(center + Vector2(1, 2), BADGE_RADIUS + 2.0, Color(0, 0, 0, 0.4))
+	draw_circle(center, BADGE_RADIUS + 2.0, Color(0.86, 0.66, 0.3) * Color(dim, dim, dim))
+	draw_circle(center, BADGE_RADIUS, Color(0.08, 0.07, 0.1))
+	Damage.draw_icon(self, center, BADGE_RADIUS * 1.35, type)
+	if not affordable:
+		draw_circle(center, BADGE_RADIUS, Color(0, 0, 0, 0.4))

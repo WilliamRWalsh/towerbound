@@ -7,6 +7,8 @@ extends Node2D
 const WEAPON_REST := 0.5
 const SWING_RAISED := 3.44
 const SWING_STRUCK := 0.5
+## Pale blue a chilled enemy's colors shift toward.
+const FROST_TINT := Color(0.62, 0.85, 1.0)
 
 ## Height above the feet that arrows aim for.
 @export var chest_height := 36.0
@@ -30,10 +32,17 @@ var death := 0.0:
 	set(value):
 		death = value
 		queue_redraw()
-## 0–1 white hit flash.
+## 0–1 hit flash, toward `flash_color`.
 var flash := 0.0:
 	set(value):
 		flash = value
+		queue_redraw()
+## Color the hit flash fades from: white normally, gold on a weakness, grey on a resistance.
+var flash_color := Color.WHITE
+## 0–1 icy blue tint while chilled.
+var frost := 0.0:
+	set(value):
+		frost = value
 		queue_redraw()
 ## True once the enemy has got back up after being killed (zombies only).
 var risen := false:
@@ -67,4 +76,7 @@ func draw_swoosh(pivot: Vector2, reach: float) -> void:
 
 
 func lit(color: Color) -> Color:
-	return color.lerp(Color.WHITE, flash)
+	if frost > 0.0:
+		# Keep light and dark parts apart: shift toward the tint at the color's own brightness.
+		color = color.lerp(Color(FROST_TINT * (0.4 + color.get_luminance()), color.a), 0.6 * frost)
+	return color.lerp(Color(flash_color, color.a), flash)

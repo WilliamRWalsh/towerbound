@@ -7,6 +7,10 @@ extends CardData
 @export var tower_stats: TowerStats
 
 
+func damage_type() -> int:
+	return tower_stats.damage_type
+
+
 func begin_targeting(field: Battlefield) -> void:
 	field.grid.begin_placement(tower_scene, tower_stats)
 

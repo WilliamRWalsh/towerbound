@@ -22,6 +22,7 @@ enum Result { NONE, VICTORY, DEFEAT }
 @onready var _mana_bar: ManaBar = $HandLayer/ManaBar
 @onready var _health_bar: HealthBar = $HandLayer/HealthBar
 @onready var _hud: WaveHud = $HandLayer/WaveHud
+@onready var _preview: WavePreview = $HandLayer/WavePreview
 @onready var _banner: Banner = $MessageLayer/Banner
 
 var _deck: Deck
@@ -33,6 +34,10 @@ var _restart_button: Button
 var _discard_button: Button
 var _discarding := false
 var _discards_left := DISCARDS_PER_WAVE
+## Pops up over a tower when a card needs a choice (which upgrade); the selected card waits,
+## unspent, for the pick at `_choice_pos`.
+var _chooser: UpgradeChooser
+var _choice_pos := Vector2.ZERO
 
 ## Fractional, since kills grant tenths of a mana.
 var _mana := 0.0:
@@ -55,6 +60,9 @@ func _ready() -> void:
 	_health_bar.set_health(castle.health, castle.max_health, false)
 	_add_restart_button()
 	_add_discard_button()
+	_chooser = UpgradeChooser.new()
+	_chooser.chosen.connect(_on_choice)
+	$HandLayer.add_child(_chooser)
 	get_viewport().size_changed.connect(_fit_hud_to_safe_area)
 	_fit_hud_to_safe_area()
 	_waves.preparation_started.connect(_on_preparation_started)
@@ -67,6 +75,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_discard_button()
+	_preview.dimmed = _active_card != null
 	match _result:
 		Result.VICTORY:
 			_hud.set_status("Victory")
@@ -84,12 +93,14 @@ func _on_preparation_started(number: int, wave: WaveConfig) -> void:
 	var final := number == _waves.wave_count()
 	_banner.show_message(wave.announcement_for(number), Banner.Style.DANGER if final else Banner.Style.NOTICE)
 	_banner.show_message("Prepare for Battle")
+	_preview.show_wave(wave)
 	_discards_left = DISCARDS_PER_WAVE
 	_refill_hand()
 
 
 func _on_combat_started(_number: int) -> void:
 	_field.grid.begin_wave()
+	_preview.hide_wave()
 	_banner.show_message("Enemies Attacking!", Banner.Style.DANGER)
 
 
@@ -117,6 +128,7 @@ func _end_battle(result: Result) -> void:
 		return
 	_result = result
 	_waves.stop()
+	_preview.hide_wave()
 	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
 		enemy.halt()
 	_cancel_placement()
@@ -169,6 +181,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 	if _active_card == null or _active_card.dragging:
+		return
+	if _chooser.is_open():
+		# Escape or a tap anywhere off the choice buttons backs out without spending anything.
+		if event.is_action_pressed("ui_cancel") or (event is InputEventMouseButton and event.pressed):
+			_cancel_placement()
+			get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_cancel"):
 		_cancel_placement()
@@ -244,6 +262,7 @@ func _check_playable(card: Card) -> bool:
 
 
 func _select(card: Card) -> void:
+	_chooser.close()
 	if _active_card:
 		_active_card.selected = false
 	_field.clear_targeting()
@@ -254,6 +273,7 @@ func _select(card: Card) -> void:
 
 
 func _cancel_placement() -> void:
+	_chooser.close()
 	if _active_card:
 		_active_card.selected = false
 	_active_card = null
@@ -262,18 +282,43 @@ func _cancel_placement() -> void:
 
 
 ## Plays the card at a canvas position. On success the card leaves the hand for the discard pile
-## and its mana is spent, exactly once. On failure nothing changes.
+## and its mana is spent, exactly once. On failure nothing changes. A card that needs a choice
+## there (Upgrade on a tower with both upgrades open) opens the chooser and returns true; it is
+## played, or not, once the player picks.
 func _try_play(card: Card, global_pos: Vector2) -> bool:
 	if _result != Result.NONE or _hand.is_over_hand(global_pos) or not _has_mana(card.data.cost):
 		return false
+	var options := card.data.choices_at(_field, global_pos)
+	if not options.is_empty():
+		var grid := _field.grid
+		_choice_pos = global_pos
+		_chooser.open(grid.to_global(grid.cell_center(grid.world_to_cell(global_pos))), options)
+		_hand.layout()
+		return true
 	if not card.data.play(_field, global_pos):
 		return false
+	_finish_play(card)
+	return true
+
+
+## Plays the selected card with the option picked in the chooser.
+func _on_choice(index: int) -> void:
+	var card := _active_card
+	_chooser.close()
+	if card == null or _result != Result.NONE or not _has_mana(card.data.cost) \
+			or not card.data.play_choice(_field, _choice_pos, index):
+		_cancel_placement()
+		return
+	_finish_play(card)
+
+
+## The card was played: it leaves the hand for the discard pile and its mana is spent.
+func _finish_play(card: Card) -> void:
 	_active_card = null
 	_field.clear_targeting()
 	_hand.remove_card(card)
 	_deck.discard(card.data)
 	_mana -= card.data.cost
-	return true
 
 
 ## Arms or disarms discard mode. Arming drops any selected card back into the hand.
@@ -288,7 +333,7 @@ func _set_discarding(on: bool) -> void:
 
 
 ## Throws a card onto the discard pile without playing it. Costs no mana, but uses up the
-## wave's discard.
+## wave's discard. Some cards do something when thrown away (Barricade leaves caltrops).
 func _discard(card: Card) -> void:
 	if not _discarding or _discards_left <= 0 or _result != Result.NONE:
 		return
@@ -296,6 +341,7 @@ func _discard(card: Card) -> void:
 	_set_discarding(false)
 	_hand.discard_card(card)
 	_deck.discard(card.data)
+	card.data.on_discard(_field)
 
 
 func _add_discard_button() -> void:
@@ -376,4 +422,6 @@ func _fit_hud_to_safe_area() -> void:
 	_mana_bar.size = Vector2(Gauge.CAP_SIZE, bar_height)
 	_mana_bar.position = Vector2(view.x - Gauge.CAP_SIZE - 2.0, bar_y)
 	_hud.position = Vector2(HUD_MARGIN, top_inset + HUD_MARGIN)
+	_preview.position = Vector2(HUD_MARGIN, bars_top - 14.0)
+	_preview.size = Vector2(view.x - HUD_MARGIN * 2.0, WavePreview.HEIGHT)
 	_restart_button.position = Vector2(view.x - RESTART_BUTTON_SIZE.x - HUD_MARGIN, top_inset + HUD_MARGIN)

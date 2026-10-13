@@ -55,7 +55,7 @@ These defaults make the first slice implementable. They are not final game balan
 
 | Setting | Initial value |
 | --- | --- |
-| Prototype deck | 13 cards: 4 Archer Tower, 2 Cannon Tower, 2 Fireball, 2 Upgrade, 2 Heal, 1 Barricade (changed from 16 Archer Towers; see log) |
+| Prototype deck | 15 cards: 4 Archer Tower, 2 Cannon Tower, 2 Fireball, 2 Upgrade, 2 Repair (Heal), 1 Barricade, 1 Oil Slick, 1 Chill (changed from 16 Archer Towers; see log) |
 | Starting mana | 5 (changed from 8, then 4; see log) |
 | Mana cap | 10 |
 | Archer Tower cost | 2 mana |
@@ -318,4 +318,86 @@ Run these checks as the corresponding systems become available and repeat the co
     - Screenshots of discard mode, the used button, and a close-up of skeletons at the barricade were reviewed.
     - The project loads with no script errors.
     - Not yet checked: the iOS simulator or phone, and a full ten-wave run with these changes.
+- 2026-10-12 — Tower charges and burning Fireball ground (requested by the user to make placement choices matter; milestones unchanged).
+  - **Charges:** Archer and Cannon towers hold `TowerStats.charges` (2). If a tower fires at least once in a wave, that wave spends one charge. A tower that spends its last charge keeps firing until the wave ends. It then sits out the whole next wave reloading and returns full: fire, fire, reload. A tower that never fires keeps its charges. The rules live in `Tower` (`can_fire`, `begin_wave`, `end_wave`). `main.gd` calls `BuildGrid.begin_wave`/`end_wave` on combat start and wave clear. Castle turrets have `charges = 0` (unlimited) and aren't in the grid.
+  - **Charge UI:** Amber gem pips on a dark plate under each tower base show charges left, and a pip pops as it's spent. A reloading tower is dimmed and shows a turning amber reload ring through the preparation phase and the wave it sits out. The cannon stops tracking targets while it reloads.
+  - **Fireball:** Impact damage is unchanged (3). The impact leaves a `BurningGround` patch (`scripts/burning_ground.gd`) on a new `Ground` layer under the enemies (`Battlefield.ground`). The patch has the same circle as the aiming preview. For `burn_duration` (4 s) it deals `burn_dps` (1) every 0.5 s in half-damage ticks to every living enemy inside, including enemies that walk in later. Both values are exported on `FireballCardData` (`data/cards/fireball.tres`).
+  - **Validation:** Scripted runs at 720 × 1560.
+    - Charges: A tower beside the path went 2 → 1 → 0 over waves 1–2. It fired no shots in wave 3 and was dimmed and reloading from wave 3's preparation. It was back to 2 by wave 4's preparation, then fired and dropped to 1. A tower out of reach kept 2. A tower placed mid-combat in wave 4 spent a charge on its first shot. The castle turrets fired in waves 1–3.
+    - Burn: Impact took exactly 3. A stationary giant lost 2.0 health over 2 s in the patch. A giant moved in later lost 1.0. The patch stopped hurting and freed itself after 4 s. A burn kill fired `died` once and paid 0.3 mana. A patch lit after defeat dealt nothing.
+    - Full runs: The scripted meadow-full win run still won with 20 health, and retry after victory and defeat was clean (20 health, 5 mana, 4 cards, no towers).
+    - Screenshots of the pips, a reloading cannon, and the patch under enemies were reviewed.
+  - **Stale test expectations, not failures:** The defeat script's "20 one-damage hits" check now counts 24, because enemy hits deal 0.85 after the softer-hits change.
+  - **Not done:** Not checked on the iOS simulator or the phone.
+- 2026-10-12 — Spell card art, Heal renamed to Repair, and a longer Fireball burn (requested by the user; milestones unchanged).
+  - **Art:** `tools/make_spell_cards.py` now paints scenes instead of decorating the Archer Tower painting. The Upgrade card is the only one that keeps the tower.
+    - Shared scenery comes from the new `tools/card_scenery.py`: procedural sky, clouds, two mountain ranges, and pine forests. The ground is the woodland map's meadow and road, warped into perspective.
+    - Fireball: a meteor falls at dusk onto a burning patch of road, with smoke rising.
+    - Barricade: the spiked barricade stands across the road through the meadow.
+    - Repair: a castle wall with a breach. Stones rise back into it on golden trails, with scaffolding and a glowing hammer.
+    - Upgrade: the tower gets riveted iron straps, plus scaffolding and a hoist lifting a stone block.
+    - The painting now fills the whole frame opening (`frame_window`). The gem and the frame's ornaments are kept from the sketch.
+  - **Repair:** The Heal card is now titled "Repair" (`data/cards/heal.tres`; art `assets/cards/repair.png`, and `heal.png` was removed). It has a hammer icon and keeps the same effect (+5 castle health). The code still calls it `HealCardData`.
+  - **Tuning:** Fireball `burn_duration` changed from 4 s to 10 s at the user's request. At 1 damage per second, an enemy that stays in the patch takes up to 10 burn damage on top of the impact. The card text now reads "10s BURN".
+  - **Validation:** All four cards were rendered and reviewed. Headless loads show the new titles, the 830 × 1429 art, and a burn of 10.0. The main scene ran headless for 300 frames with no errors. Not checked in play or on the iOS simulator.
+- 2026-10-12 — Damage types, wave preview, and combo cards (requested by the user so card and tower choices depend on the coming wave; milestones unchanged).
+  - **Damage types:** `Damage` (`scripts/damage.gd`) defines pierce, crush, fire, and frost, and draws a small icon for each.
+    - Sources: Archer Towers and castle turrets deal pierce, and Cannon Towers deal crush (`TowerStats.damage_type`). Fireball, burning ground, and ignited oil deal fire. Chill deals frost.
+    - `EnemyStats` has a multiplier per type and a `display_name`. `Enemy.take_damage(amount, type)` applies the multiplier.
+    - Hit flashes are gold on a weakness and grey on a resistance.
+    - A killing fire hit keeps a zombie down, with no revive.
+  - **Tuning, provisional:** Damage multipliers per enemy:
+    - Skeleton: pierce ×0.5, crush ×1.5.
+    - Goblin: neutral.
+    - Big goblin: pierce ×1.5, crush ×0.5.
+    - Zombie: fire ×2.
+    - Giant: pierce ×0.5, crush ×1.25, frost ×0.5 (its chill lasts half as long).
+  - **Statuses:** `Enemy.apply_slow` (the strongest slow wins) and `apply_chill`. Chill:
+    - Halves walking speed.
+    - Makes gate and barricade strikes 1.5× slower; the change applies from the next swing.
+    - Makes the enemy brittle: crush damage ×1.5.
+    - Chilled enemies get a pale blue tint (`EnemyBody.frost`).
+  - **Wave preview:** `WavePreview` (`scripts/wave_preview.gd`) is a panel under the top HUD during preparation.
+    - It shows each enemy type in the coming wave, using its real art (the scene's `Body` node), with "×N".
+    - Below each type, damage icons with a green ▲ for a weakness and a grey ▼ for a resistance. Zombies also get a "gets back up" arrow.
+    - Counts come from `WaveConfig.enemy_counts()`.
+    - It fades out when combat starts or the battle ends, and dims while a card is aimed.
+  - **Card badges:** Cards that deal damage show their damage type's icon in a badge in the top-right corner (`CardData.damage_type()`).
+  - **Oil Slick card** (cost 1; `OilCardData`, `scripts/oil_slick.gd`, `data/cards/oil_slick.tres`):
+    - It snaps to the road and is rejected off it (`Battlefield.road_point`). The radius is 55.
+    - It slows enemies inside to 60% speed for 25 s.
+    - Any Fireball blast or burning ground that touches it ignites it into a BurningGround with 2.5 dps for 7 s. That blaze can ignite a neighboring slick in turn.
+  - **Chill card** (cost 2; `ChillCardData`, `scripts/frost_burst.gd`, `data/cards/chill.tres`): Can target anywhere. It deals 0.5 frost and chills enemies within 70 for 5 s.
+  - **Barricade discard:** New `CardData.on_discard` hook. A Barricade thrown away with Discard scatters caltrops (`scripts/caltrops.gd`) on the road 270 map px before its end, just ahead of the gate crowd. The first 8 enemies to cross take 1 pierce each. More discards add to the same patch.
+  - **Card art:** `tools/make_spell_cards.py` has new `oil_slick` and `chill` entries, and the Barricade card text now mentions caltrops.
+  - **Validation:** A scripted headless run checked the following:
+    - Preview: Wave 1 shows 11 skeletons and 5 goblins. Wave 10 shows all 5 types, 89 enemies. The preview is hidden in combat.
+    - Damage: An arrow takes 0.5 from a skeleton and 1.5 from a big goblin. A cannonball takes 4.5 from a skeleton and 1.5 from a big goblin.
+    - Zombies: Fire deals ×2, and a fire kill emits `died` once with no revive. An arrow kill still revives.
+    - Chill:
+      - It lasts 5 s on a goblin and 2.5 s on a giant.
+      - A chilled goblin walks at 0.50× speed, and a cannonball deals it 4.5.
+      - Chill wears off.
+      - A chilled skeleton at the gate strikes every 2.71 s (1.8 × 1.5).
+    - Oil:
+      - It is rejected off the road and slows a goblin to 0.6×.
+      - A Fireball ignited the near slick first, and the blaze then chained to a second slick.
+      - A still giant in the blaze plus the Fireball patch lost 7 health in 2 s.
+    - Caltrops: Discarding a Barricade spent no mana and removed the card. Ten walking goblins crossed, exactly 8 were hurt, and the patch was then used up.
+    - Full runs: The full win run still clears all 10 waves (491 enemies, each dying once) with a clean retry. The defeat run only fails its stale 20-hit check (it counts 24 at 0.85 per hit).
+    - Screenshots at 720 × 1560 of the preview, card badges, oil, chill tint, caltrops, and the ignited slick were reviewed.
+  - **Not checked:** Winnability with a real hand, now that arrows do half damage to skeletons, the most common enemy. Also not checked on the iOS simulator.
+- 2026-10-12 — Upgrade picks Rate of Fire or Ammo (requested by the user; milestones unchanged).
+  - **Behavior:** Dropping Upgrade on a tower opens two buttons beside it: "Rate of Fire +50% speed" and "Ammo +1 charge" (`UpgradeChooser`, `scripts/upgrade_chooser.gd`). The card and its 3 mana are spent only after a pick. Escape, a tap off the buttons, tapping a card, or the battle ending closes the chooser and spends nothing. The buttons sit above the tower, or below it for towers in the top half so they clear the HUD.
+  - **Each kind once per tower:** A tower can take one Rate and one Ammo upgrade. When only one is left, Upgrade applies it straight away with no chooser. A tower with both is no longer highlighted or a valid target.
+  - **Ammo:** `Tower.max_charges` starts at the card's `charges` (2) and goes to 3. A tower that isn't reloading also gets the charge right away, so one that just spent its last charge doesn't reload. A reloading tower refills to the new maximum. The extra charge shows as a third pip. The gold chevron badge now means the Rate upgrade only; both upgrades play the gold burst.
+  - **Code:** `CardData` has new `choices_at` and `play_choice` hooks. `main.gd` opens the chooser when `choices_at` returns options and finishes the play in `_finish_play`. `Tower.upgrade` is split into `upgrade_rate` and `upgrade_ammo`. `UpgradeCardData` exports `attack_rate_bonus` (0.5) and the new `extra_charges` (1).
+  - **Card art:** `tools/make_spell_cards.py upgrade` now prints "Upgrade a tower: +50% attack speed or +1 ammo."
+  - **Validation:** A scripted run at 720 × 1560 passed all 22 checks:
+    - Opening the chooser spent nothing, and Escape closed it with mana and hand unchanged.
+    - Picking Rate set the interval to 0.667 and spent 3 mana and one card once. A second Upgrade on that tower applied Ammo with no chooser (3 max, 3 left), and a third was rejected with nothing spent.
+    - Ammo on a tower that had spent its last charge gave it 1, and it didn't reload. Ammo on a reloading tower gave nothing until it refilled to 3.
+    - Defeat with the chooser open closed it, and a late pick did nothing.
+    - Screenshots of the chooser and the upgraded tower (badge plus three pips) were reviewed.
+    - Not yet checked on the iOS simulator or the phone.
 - Add subsequent entries with the milestone, completed behavior, validation performed, and any tuning changes with their reason.

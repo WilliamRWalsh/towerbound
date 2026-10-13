@@ -4,8 +4,11 @@
 
 [resource]
 script = ExtResource("1_stats")
+display_name = "Big Goblin"
 max_health = 8
 speed = 77.0
 castle_damage = 1.7
 attack_interval = 1.8
 mana_reward = 0.9
+pierce = 1.5
+crush = 0.5

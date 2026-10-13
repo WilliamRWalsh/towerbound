@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://mwtppry1hosb"
-path="res://.godot/imported/heal.png-7ac41580ee8b93597edee59770e98d76.ctex"
+uid="uid://dcc1aa1w58xk2"
+path="res://.godot/imported/chill.png-62315728f4727398ce8bb54023590a09.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/heal.png"
-dest_files=["res://.godot/imported/heal.png-7ac41580ee8b93597edee59770e98d76.ctex"]
+source_file="res://assets/cards/chill.png"
+dest_files=["res://.godot/imported/chill.png-62315728f4727398ce8bb54023590a09.ctex"]
 
 [params]
 

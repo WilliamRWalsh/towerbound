@@ -79,7 +79,7 @@ func tower_at(cell: Vector2i) -> Tower:
 
 func can_upgrade(cell: Vector2i) -> bool:
 	var tower := tower_at(cell)
-	return tower != null and not tower.upgraded
+	return tower != null and tower.can_upgrade()
 
 
 func has_upgradeable_tower() -> bool:

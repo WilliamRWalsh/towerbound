@@ -13,6 +13,7 @@ const IMPACT_TIME := 0.3
 
 var _target: Enemy
 var _damage := 1.0
+var _damage_type := Damage.Type.PIERCE
 var _speed := 0.0
 var _from := Vector2.ZERO
 var _aim := Vector2.ZERO
@@ -23,10 +24,12 @@ var _impact := -1.0
 
 
 ## Fires a cannonball from a canvas position. `speed` is in reference units per second.
-static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: float, speed: float) -> Cannonball:
+static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: float,
+		damage_type: Damage.Type, speed: float) -> Cannonball:
 	var ball := Cannonball.new()
 	ball._target = target
 	ball._damage = damage
+	ball._damage_type = damage_type
 	ball._speed = speed * BuildGrid.MAP_PIXELS_PER_UNIT
 	layer.add_child(ball)
 	ball._from = layer.to_local(from_global)
@@ -51,7 +54,7 @@ func _process(delta: float) -> void:
 	position = _from.lerp(_aim, _progress) + Vector2(0, -_arc * 4.0 * _progress * (1.0 - _progress))
 	if _progress >= 1.0:
 		if tracking:
-			_target.take_damage(_damage)
+			_target.take_damage(_damage, _damage_type)
 		_impact = 0.0
 	queue_redraw()
 

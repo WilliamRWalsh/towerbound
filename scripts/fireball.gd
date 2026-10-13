@@ -3,8 +3,8 @@ extends Node2D
 ## A Fireball spell: a flaming meteor falls onto the target point, then bursts. On impact it
 ## damages every living enemy within the radius exactly once; enemies that die from it pay out
 ## through their own `died` signal. It then leaves a BurningGround patch on the ground layer that
-## keeps burning enemies who stand in or walk through it. Works in its parent's (map-pixel)
-## coordinates.
+## keeps burning enemies who stand in or walk through it. Any Oil Slick the blast touches
+## ignites. Works in its parent's (map-pixel) coordinates.
 
 const FALL_TIME := 0.42
 const BURST_TIME := 0.7
@@ -60,7 +60,8 @@ func _explode() -> void:
 		if enemy.is_alive() and parent.to_local(enemy.global_position).distance_to(position) <= _radius:
 			hit.append(enemy)
 	for enemy in hit:
-		enemy.take_damage(_damage)
+		enemy.take_damage(_damage, Damage.Type.FIRE)
+	OilSlick.ignite_within(get_tree(), global_position, _radius * global_scale.x)
 	if _burn_duration > 0.0:
 		BurningGround.ignite(_ground, global_position, _radius, _burn_dps, _burn_duration)
 	for i in 18:

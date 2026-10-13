@@ -4,6 +4,7 @@ extends Resource
 ## at the 720 × 1280 reference resolution.
 
 @export var damage := 1.0
+@export var damage_type: Damage.Type = Damage.Type.PIERCE
 ## Seconds between shots.
 @export var fire_interval := 1.0
 @export var attack_range := 180.0

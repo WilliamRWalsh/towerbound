@@ -12,7 +12,7 @@ func _ready() -> void:
 
 
 func _fire(target: Enemy) -> void:
-	Arrow.launch(_projectiles, global_position, target, stats.damage, stats.projectile_speed)
+	Arrow.launch(_projectiles, global_position, target, stats.damage, stats.damage_type, stats.projectile_speed)
 
 
 func _draw() -> void:

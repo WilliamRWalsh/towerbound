@@ -1,7 +1,7 @@
 class_name Castle
 extends Node2D
 ## The defended castle: owns its health, which is authoritative for the battle. Enemies at the gate
-## call `take_damage`; the Heal card calls `heal`. Also draws feedback over the painted gate in
+## call `take_damage`; the Repair card calls `heal`. Also draws feedback over the painted gate in
 ## map pixels: a red flash when struck, a green glow while a heal is being aimed, and rising
 ## sparkles when healed.
 
@@ -19,7 +19,7 @@ var max_health := 20
 ## Fractional, since enemy strikes deal fractions of a point.
 var health := 20.0
 
-## True while a Heal card is selected, so the castle glows as a target.
+## True while a Repair card is selected, so the castle glows as a target.
 var highlighted := false:
 	set(value):
 		highlighted = value

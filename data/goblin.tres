@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_stats")
+display_name = "Goblin"
 max_health = 3
 speed = 93.0
 castle_damage = 0.85

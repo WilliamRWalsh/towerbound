@@ -24,6 +24,18 @@ func _ready() -> void:
 	_fit_to_viewport()
 
 
+## Canvas position of the nearest point on the road to `global_pos`, or Vector2.INF when that is
+## more than `max_distance` map pixels away or under the Badlands gate (the notch).
+func road_point(global_pos: Vector2, max_distance: float) -> Vector2:
+	var path := barricades.path
+	var local := path.to_local(global_pos)
+	var offset := path.curve.get_closest_offset(local)
+	var point := path.curve.sample_baked(offset)
+	if local.distance_to(point) > max_distance or offset < BarricadeLayer.MIN_PROGRESS:
+		return Vector2.INF
+	return path.to_global(point)
+
+
 ## Clears every targeting preview a card may have turned on.
 func clear_targeting() -> void:
 	grid.end_placement()

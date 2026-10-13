@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/battlefield.tscn" id="2_field"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/wave_hud.gd" id="7_hud"]
 [ext_resource type="Script" path="res://scripts/health_bar.gd" id="9_health"]
 [ext_resource type="Resource" path="res://data/levels/woodland.tres" id="8_level"]
+[ext_resource type="Script" path="res://scripts/wave_preview.gd" id="10_preview"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -27,6 +28,12 @@ layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("7_hud")
+
+[node name="WavePreview" type="Control" parent="HandLayer"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("10_preview")
 
 [node name="Hand" type="Control" parent="HandLayer"]
 layout_mode = 3

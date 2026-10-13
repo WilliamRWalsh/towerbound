@@ -8,6 +8,9 @@ extends PathFollow2D
 ## Enemies with `stats.revives` (zombies) fall DOWNED instead of dying and get back up after
 ## `stats.revive_delay`; only the final death emits `died`. A downed enemy stays in the group so
 ## a battle halt still reaches it, but `is_alive` is false, so nothing can target or hurt it.
+## Damage is scaled by the type's multiplier in `stats`, and a killing fire hit keeps a reviving
+## enemy down. Slows (Oil Slick) scale walking speed; chill (Chill card) slows walking and
+## striking and makes the enemy brittle: it takes extra crush damage until it thaws.
 
 signal died(enemy: Enemy)
 signal attacked_castle(enemy: Enemy, damage: float)
@@ -28,6 +31,13 @@ const BARRICADE_CROWD := 40.0
 ## Seconds one full swing takes (raise, hold, strike, recover); the rest of the attack interval
 ## is spent waiting.
 const SWING_TIME := 0.97
+## While chilled: walking speed multiplier, strike interval multiplier, and extra crush damage.
+const CHILL_SLOW := 0.5
+const CHILL_STRIKE_DELAY := 1.5
+const BRITTLE_CRUSH := 1.5
+## Hit flash colors for weaknesses (a bright pop) and resistances (a dull clink).
+const WEAK_FLASH := Color(1.0, 0.85, 0.35)
+const RESIST_FLASH := Color(0.55, 0.57, 0.6)
 
 @export var stats: EnemyStats
 ## Walk cycle speed relative to distance; short legs take quicker steps.
@@ -45,6 +55,10 @@ var _revive: Tween
 var _revives_left := 0
 ## Whether it had reached the gate, so it goes back to striking after getting up.
 var _at_gate := false
+## Strongest active slow (speed multiplier) and seconds it has left.
+var _slow := 1.0
+var _slow_left := 0.0
+var _chill_left := 0.0
 
 @onready var _body: EnemyBody = $Body
 
@@ -68,18 +82,38 @@ func aim_point() -> Vector2:
 	return _body.to_global(Vector2(0, -_body.chest_height))
 
 
-func take_damage(amount: float) -> void:
+func is_chilled() -> bool:
+	return _chill_left > 0.0
+
+
+## Damage after this enemy's resistance or weakness to the type, and brittleness while chilled.
+func damage_after_resistance(amount: float, type: int) -> float:
+	var scaled := amount * stats.multiplier(type)
+	if type == Damage.Type.CRUSH and is_chilled():
+		scaled *= BRITTLE_CRUSH
+	return scaled
+
+
+func take_damage(amount: float, type: int = Damage.NONE) -> void:
 	if not is_alive():
 		return
-	health -= amount
+	var multiplier := damage_after_resistance(1.0, type)
+	health -= amount * multiplier
 	_body.health_ratio = health / stats.max_health
+	if multiplier > 1.01:
+		_body.flash_color = WEAK_FLASH
+	elif multiplier < 0.99:
+		_body.flash_color = RESIST_FLASH
+	else:
+		_body.flash_color = Color.WHITE
 	_body.flash = 1.0
 	create_tween().tween_property(_body, "flash", 0.0, 0.18)
 	var wobble := create_tween()
 	wobble.tween_property(_body, "rotation", -0.14 * _body.scale.x, 0.05)
 	wobble.tween_property(_body, "rotation", 0.0, 0.12)
 	if health <= 0.001:
-		if _revives_left > 0:
+		# Fire burns a reviving enemy for good.
+		if _revives_left > 0 and type != Damage.Type.FIRE:
 			_go_down()
 		else:
 			_die()
@@ -99,14 +133,40 @@ func halt() -> void:
 		create_tween().tween_property(_body, "death", 1.0, 0.3)
 
 
+## Slows walking to `factor` × speed for `duration` seconds. The strongest active slow wins.
+func apply_slow(factor: float, duration: float) -> void:
+	if not is_alive():
+		return
+	if factor < _slow or _slow_left <= 0.0:
+		_slow = factor
+		_slow_left = duration
+	elif is_equal_approx(factor, _slow):
+		_slow_left = maxf(_slow_left, duration)
+
+
+## Chills for `duration` seconds, scaled by the enemy's frost multiplier: slower walking and
+## striking, and brittle against crush damage.
+func apply_chill(duration: float) -> void:
+	if not is_alive():
+		return
+	_chill_left = maxf(_chill_left, duration * stats.frost)
+	apply_slow(CHILL_SLOW, _chill_left)
+
+
+## Current walking speed multiplier from slows.
+func speed_multiplier() -> float:
+	return _slow if _slow_left > 0.0 else 1.0
+
+
 func _process(delta: float) -> void:
+	_tick_statuses(delta)
 	if state == State.BLOCKED and not _blocker.is_standing():
 		_resume_walking()
 	if state != State.WALKING:
 		return
 	var before := position
 	var start := progress
-	progress += stats.speed * BuildGrid.MAP_PIXELS_PER_UNIT * delta
+	progress += stats.speed * speed_multiplier() * BuildGrid.MAP_PIXELS_PER_UNIT * delta
 	var barricade := _barricade_ahead(start)
 	if barricade:
 		progress = maxf(start, barricade.progress - _barricade_gap)
@@ -119,6 +179,16 @@ func _process(delta: float) -> void:
 	_body.weapon_angle = EnemyBody.WEAPON_REST + sin(_body.walk_phase) * 0.2
 	if progress_ratio >= _stop_ratio:
 		_reach_gate()
+
+
+func _tick_statuses(delta: float) -> void:
+	_slow_left = maxf(0.0, _slow_left - delta)
+	_chill_left = maxf(0.0, _chill_left - delta)
+	if _slow_left <= 0.0:
+		_slow = 1.0
+	var frost := minf(1.0, _chill_left / 0.4)
+	if not is_equal_approx(_body.frost, frost):
+		_body.frost = frost
 
 
 func _die() -> void:
@@ -203,7 +273,7 @@ func _reach_gate() -> void:
 
 
 ## One chop at the gate or a barricade: raise, strike (dealing damage once), recover, and wait out the rest of
-## the attack interval before the next swing.
+## the attack interval (longer if chilled when the swing starts) before the next swing.
 func _start_swing() -> void:
 	_swing = create_tween()
 	_swing.tween_property(_body, "weapon_angle", EnemyBody.SWING_RAISED, 0.3) \
@@ -215,7 +285,8 @@ func _start_swing() -> void:
 	_swing.tween_callback(_strike)
 	_swing.tween_property(_body, "swoosh", 0.0, 0.2)
 	_swing.tween_property(_body, "weapon_angle", EnemyBody.WEAPON_REST, 0.25)
-	_swing.tween_interval(maxf(0.0, stats.attack_interval - SWING_TIME))
+	var interval := stats.attack_interval * (CHILL_STRIKE_DELAY if is_chilled() else 1.0)
+	_swing.tween_interval(maxf(0.0, interval - SWING_TIME))
 	_swing.tween_callback(_start_swing)
 
 

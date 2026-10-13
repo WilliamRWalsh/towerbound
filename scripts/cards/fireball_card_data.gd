@@ -11,6 +11,10 @@ extends CardData
 @export var burn_duration := 4.0
 
 
+func damage_type() -> int:
+	return Damage.Type.FIRE
+
+
 func begin_targeting(field: Battlefield) -> void:
 	field.overlay.show_circle(radius * BuildGrid.MAP_PIXELS_PER_UNIT)
 

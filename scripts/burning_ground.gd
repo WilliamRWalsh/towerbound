@@ -2,8 +2,8 @@ class_name BurningGround
 extends Node2D
 ## Scorched, burning ground a Fireball leaves behind. Every tick it burns each living enemy inside
 ## its radius, including ones that walk in later; kills pay out through the enemy's own `died`
-## signal. Sits on the ground layer, under the enemies. Works in its parent's (map-pixel)
-## coordinates.
+## signal. Every tick it also ignites any Oil Slick it touches, so fire spreads along oil. Sits on
+## the ground layer, under the enemies. Works in its parent's (map-pixel) coordinates.
 
 const TICK := 0.5
 const FADE_TIME := 0.6
@@ -52,7 +52,8 @@ func _burn(amount: float) -> void:
 		if enemy.is_alive() and parent.to_local(enemy.global_position).distance_to(position) <= _radius:
 			hit.append(enemy)
 	for enemy in hit:
-		enemy.take_damage(amount)
+		enemy.take_damage(amount, Damage.Type.FIRE)
+	OilSlick.ignite_within(get_tree(), global_position, _radius * global_scale.x)
 
 
 func _draw() -> void:
@@ -67,7 +68,7 @@ func _draw() -> void:
 		var base: Vector2 = flame[0]
 		var cycle := fmod(_age * 1.6 + flame[1], 1.0)
 		var size: float = flame[2] * (1.0 - cycle * 0.6) * fade * grow
-		var lift := Vector2(sin(_age * 7.0 + flame[1]) * 2.0, -cycle * 18.0)
-		draw_circle(base + lift, 11.0 * size, Color(EMBER, 0.55))
-		draw_circle(base + lift + Vector2(0, -3), 7.5 * size, Color(FLAME, 0.85))
-		draw_circle(base + lift + Vector2(0, -5), 3.5 * size, Color(CORE, 0.9))
+		var lift := Vector2(sin(_age * 7.0 + flame[1]) * 2.0, -cycle * 24.0)
+		draw_circle(base + lift, 16.0 * size, Color(EMBER, 0.55))
+		draw_circle(base + lift + Vector2(0, -4), 11.0 * size, Color(FLAME, 0.85))
+		draw_circle(base + lift + Vector2(0, -7), 5.0 * size, Color(CORE, 0.9))

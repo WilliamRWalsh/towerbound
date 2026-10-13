@@ -9,3 +9,4 @@ fire_interval = 1.0
 attack_range = 180.0
 projectile_speed = 420.0
 charges = 0
+damage_type = 0

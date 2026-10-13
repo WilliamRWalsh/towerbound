@@ -2,8 +2,8 @@ class_name Tower
 extends Node2D
 ## Base for towers placed on the battlefield. Targets the in-range enemy furthest along the path
 ## and fires on a cooldown, using the stats of the card that placed it. Inactive (a placement
-## preview) until `activate` is called. Subclasses decide what firing looks like. An Upgrade card
-## can raise its attack rate once.
+## preview) until `activate` is called. Subclasses decide what firing looks like. Upgrade cards
+## can raise its attack rate once and its ammo capacity once.
 ##
 ## Ammo: a tower holds `stats.charges` charges. Firing at least once in a wave spends one charge
 ## for that whole wave. A tower that spends its last charge keeps firing until the wave ends, then
@@ -15,17 +15,20 @@ const UPGRADE_BURST_TIME := 0.6
 const GOLD := Color(1.0, 0.82, 0.3)
 const GOLD_DARK := Color(0.5, 0.33, 0.08)
 ## Where the charge pips sit, relative to the cell center, and the gap between them.
-const PIPS_POS := Vector2(0, 40)
-const PIP_SPACING := 22.0
+const PIPS_POS := Vector2(0, 50)
+const PIP_SPACING := 32.0
 const PIP_POP_TIME := 0.35
 const AMMO := Color(1.0, 0.72, 0.25)
 const AMMO_DARK := Color(0.14, 0.1, 0.07)
-const RELOAD_TINT := Color(0.55, 0.55, 0.6)
+const RELOAD_TINT := Color(0.42, 0.42, 0.5)
 
 var stats: TowerStats
-var upgraded := false
+var rate_upgraded := false
+var ammo_upgraded := false
 ## Seconds between shots; starts at the card's value and shrinks when upgraded.
 var fire_interval := 1.0
+## Charges the tower holds when full; starts at the card's value and grows with an ammo upgrade.
+var max_charges := 0
 ## Charges left before the tower must reload.
 var charges_left := 0
 ## Sitting out the current (or next) wave; can't fire.
@@ -46,7 +49,8 @@ func activate(tower_stats: TowerStats, projectile_layer: Node2D) -> void:
 	stats = tower_stats
 	fire_interval = stats.fire_interval
 	_projectiles = projectile_layer
-	charges_left = stats.charges
+	max_charges = stats.charges
+	charges_left = max_charges
 	if stats.charges > 0:
 		_pips = Node2D.new()
 		_pips.z_index = 1
@@ -76,7 +80,7 @@ func end_wave() -> void:
 		return
 	if reloading:
 		reloading = false
-		charges_left = stats.charges
+		charges_left = max_charges
 	elif charges_left <= 0:
 		reloading = true
 	_on_reload_changed()
@@ -90,20 +94,56 @@ func _on_reload_changed() -> void:
 			child.modulate = RELOAD_TINT if reloading else Color.WHITE
 
 
+## True while an Upgrade card still has something to improve here.
+func can_upgrade() -> bool:
+	return can_upgrade_rate() or can_upgrade_ammo()
+
+
+func can_upgrade_rate() -> bool:
+	return stats != null and not rate_upgraded
+
+
+## Towers with unlimited ammo (castle turrets) have nothing to gain.
+func can_upgrade_ammo() -> bool:
+	return stats != null and stats.charges > 0 and not ammo_upgraded
+
+
 ## Raises the attack rate by `attack_rate_bonus` (0.5 = 50% more shots). Only once per tower;
-## returns false and changes nothing if it was already upgraded.
-func upgrade(attack_rate_bonus: float) -> bool:
-	if upgraded or stats == null:
+## returns false and changes nothing if it was already done.
+func upgrade_rate(attack_rate_bonus: float) -> bool:
+	if not can_upgrade_rate():
 		return false
-	upgraded = true
+	rate_upgraded = true
 	fire_interval = stats.fire_interval / (1.0 + attack_rate_bonus)
 	_cooldown = minf(_cooldown, fire_interval)
-	_badge = Node2D.new()
-	_badge.z_index = 1
-	_badge.draw.connect(_draw_badge)
-	add_child(_badge)
-	_burst = 0.0
+	_show_upgrade_burst()
 	return true
+
+
+## Adds `extra` charges to the tower's capacity, and to its current charges unless it is reloading
+## (a reloading tower comes back with the new full amount). Only once per tower; returns false and
+## changes nothing if it was already done.
+func upgrade_ammo(extra: int) -> bool:
+	if not can_upgrade_ammo():
+		return false
+	ammo_upgraded = true
+	max_charges += extra
+	if not reloading:
+		charges_left += extra
+	_pips.queue_redraw()
+	_show_upgrade_burst()
+	return true
+
+
+## Adds the badge node (it draws the rate shield and the burst ring) and starts the burst.
+func _show_upgrade_burst() -> void:
+	if _badge == null:
+		_badge = Node2D.new()
+		_badge.z_index = 1
+		_badge.draw.connect(_draw_badge)
+		add_child(_badge)
+	_burst = 0.0
+	_badge.queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -157,7 +197,8 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, 60.0, Color(0, 0, 0, 0.3))
 
 
-## Gold shield with two chevrons on the tower's side, plus a ring of light when first upgraded.
+## Gold shield with two chevrons on the tower's side once its rate is upgraded, plus a ring of
+## light whenever it is upgraded.
 func _draw_badge() -> void:
 	if _burst >= 0.0:
 		var t := _burst / UPGRADE_BURST_TIME
@@ -165,6 +206,8 @@ func _draw_badge() -> void:
 		for i in 8:
 			var dir := Vector2.from_angle(TAU * i / 8.0)
 			_badge.draw_circle(Vector2(0, -50) + dir * (30.0 + 90.0 * t), 5.0 * (1.0 - t), Color(1.0, 0.95, 0.6, 1.0 - t))
+	if not rate_upgraded:
+		return
 	var c := BADGE_POS
 	var shield := PackedVector2Array([c + Vector2(-14, -16), c + Vector2(14, -16), c + Vector2(14, 2), c + Vector2(0, 16), c + Vector2(-14, 2)])
 	var rim := PackedVector2Array([c + Vector2(-17, -19), c + Vector2(17, -19), c + Vector2(17, 3), c + Vector2(0, 20), c + Vector2(-17, 3)])
@@ -175,30 +218,36 @@ func _draw_badge() -> void:
 
 
 ## A row of charge pips under the base: amber gems for charges left, dark sockets for spent ones.
-## The charge spent this wave pops as it empties. While reloading, a turning amber arc rings them.
+## The charge spent this wave pops as it empties. While reloading, a turning ring with an arrowhead
+## sits over the tower.
 func _draw_pips() -> void:
-	var n := stats.charges
+	var n := max_charges
 	var start := PIPS_POS - Vector2(PIP_SPACING * (n - 1) * 0.5, 0)
-	var back := Rect2(start - Vector2(17, 11), Vector2(PIP_SPACING * (n - 1) + 34, 22))
+	var back := Rect2(start - Vector2(22, 15), Vector2(PIP_SPACING * (n - 1) + 44, 30))
 	_pips.draw_style_box(_pip_backing(), back)
 	for i in n:
 		var c := start + Vector2(PIP_SPACING * i, 0)
 		var full := not reloading and i < charges_left
 		if full:
-			_draw_gem(c, 7.5, AMMO)
+			_draw_gem(c, 11.0, AMMO)
 		else:
-			_pips.draw_circle(c, 6.5, AMMO_DARK)
-			_pips.draw_arc(c, 6.5, 0, TAU, 16, Color(AMMO, 0.35), 1.5)
+			_pips.draw_circle(c, 9.0, AMMO_DARK)
+			_pips.draw_arc(c, 9.0, 0, TAU, 20, Color(AMMO, 0.4), 2.0)
 		if _pip_pop >= 0.0 and i == charges_left:
 			var t := _pip_pop / PIP_POP_TIME
-			_pips.draw_circle(c, 7.5 * (1.0 - t) + 2.0, Color(1.0, 0.95, 0.7, 1.0 - t))
-			_pips.draw_arc(c, 8.0 + 12.0 * t, 0, TAU, 20, Color(AMMO, 1.0 - t), 2.5)
+			_pips.draw_circle(c, 11.0 * (1.0 - t) + 2.0, Color(1.0, 0.95, 0.7, 1.0 - t))
+			_pips.draw_arc(c, 12.0 + 16.0 * t, 0, TAU, 20, Color(AMMO, 1.0 - t), 3.0)
 	if reloading:
-		var center := PIPS_POS
-		var radius := back.size.x * 0.5 + 4.0
-		var a := _reload_spin * 4.0
-		_pips.draw_arc(center, radius, a, a + PI * 1.2, 24, Color(AMMO, 0.95), 3.0)
-		_pips.draw_arc(center, radius, a + PI, a + PI * 2.2, 24, Color(AMMO, 0.35), 3.0)
+		# A turning reload ring with an arrowhead, centered on the tower body.
+		var center := Vector2(0, -50)
+		var radius := 34.0
+		var a := _reload_spin * 3.0
+		_pips.draw_circle(center, radius + 8.0, Color(0.05, 0.04, 0.03, 0.55))
+		_pips.draw_arc(center, radius, a, a + PI * 1.5, 32, AMMO, 6.0)
+		var tip := center + Vector2.from_angle(a + PI * 1.5) * radius
+		var fwd := Vector2.from_angle(a + PI * 2.0)
+		var side := Vector2.from_angle(a + PI * 1.5)
+		_pips.draw_colored_polygon(PackedVector2Array([tip + fwd * 12.0, tip + side * 10.0 - fwd * 2.0, tip - side * 10.0 - fwd * 2.0]), AMMO)
 
 
 func _draw_gem(c: Vector2, r: float, color: Color) -> void:

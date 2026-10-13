@@ -11,6 +11,7 @@ const FADE_TIME := 0.25
 
 var _target: Enemy
 var _damage := 1.0
+var _damage_type := Damage.Type.PIERCE
 var _speed := 0.0
 var _aim := Vector2.ZERO
 var _traveled := 0.0
@@ -18,10 +19,12 @@ var _done := false
 
 
 ## Fires an arrow from a canvas position. `speed` is in reference units per second.
-static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: float, speed: float) -> Arrow:
+static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: float,
+		damage_type: Damage.Type, speed: float) -> Arrow:
 	var arrow := Arrow.new()
 	arrow._target = target
 	arrow._damage = damage
+	arrow._damage_type = damage_type
 	arrow._speed = speed * BuildGrid.MAP_PIXELS_PER_UNIT
 	layer.add_child(arrow)
 	arrow.position = layer.to_local(from_global)
@@ -41,7 +44,7 @@ func _process(delta: float) -> void:
 	if to_aim.length() <= step + HIT_RADIUS:
 		position = _aim
 		if tracking:
-			_target.take_damage(_damage)
+			_target.take_damage(_damage, _damage_type)
 			queue_free()
 		else:
 			_land()
