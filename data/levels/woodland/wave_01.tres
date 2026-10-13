@@ -1,9 +1,9 @@
 [gd_resource type="Resource" script_class="WaveConfig" load_steps=9 format=3]
 
-[ext_resource type="Script" path="res://scripts/wave_config.gd" id="1_wave"]
-[ext_resource type="Script" path="res://scripts/wave_group.gd" id="2_group"]
-[ext_resource type="PackedScene" path="res://scenes/skeleton.tscn" id="3_skeleton"]
-[ext_resource type="PackedScene" path="res://scenes/goblin.tscn" id="4_goblin"]
+[ext_resource type="Script" path="res://scripts/battle/wave_config.gd" id="1_wave"]
+[ext_resource type="Script" path="res://scripts/battle/wave_group.gd" id="2_group"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/skeleton.tscn" id="3_skeleton"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/goblin.tscn" id="4_goblin"]
 
 [sub_resource type="Resource" id="Resource_group1"]
 script = ExtResource("2_group")

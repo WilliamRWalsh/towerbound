@@ -37,6 +37,8 @@ func _run() -> void:
 func _start(size: Vector2i, level: LevelConfig = null) -> Driver:
 	for child in _host.get_children():
 		child.queue_free()
+	# Same shuffle and spawn jitter every run, so shots compare pixel for pixel.
+	seed(1)
 	var d := Driver.new(_host, level, size)
 	d.viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	return d

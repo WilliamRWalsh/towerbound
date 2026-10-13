@@ -11,11 +11,11 @@ OUT_DIR = ROOT / "data/levels/woodland"
 
 # Enemy key -> (scene, ext_resource id).
 ENEMIES = {
-    "S": ("res://scenes/skeleton.tscn", "3_skeleton"),
-    "G": ("res://scenes/goblin.tscn", "4_goblin"),
-    "B": ("res://scenes/big_goblin.tscn", "5_big_goblin"),
-    "T": ("res://scenes/giant.tscn", "6_giant"),
-    "Z": ("res://scenes/zombie.tscn", "7_zombie"),
+    "S": ("res://scenes/enemies/skeleton.tscn", "3_skeleton"),
+    "G": ("res://scenes/enemies/goblin.tscn", "4_goblin"),
+    "B": ("res://scenes/enemies/big_goblin.tscn", "5_big_goblin"),
+    "T": ("res://scenes/enemies/giant.tscn", "6_giant"),
+    "Z": ("res://scenes/enemies/zombie.tscn", "7_zombie"),
 }
 
 # S skeleton, G goblin, B big goblin, T giant, Z zombie.
@@ -60,8 +60,8 @@ def interleave(counts):
 def wave_text(number, groups):
     used = sorted({k for _, _, spec in groups for k in parse_counts(spec)}, key=list(ENEMIES).index)
     lines = [f'[gd_resource type="Resource" script_class="WaveConfig" load_steps={3 + len(used) + len(groups)} format=3]', "",
-             '[ext_resource type="Script" path="res://scripts/wave_config.gd" id="1_wave"]',
-             '[ext_resource type="Script" path="res://scripts/wave_group.gd" id="2_group"]']
+             '[ext_resource type="Script" path="res://scripts/battle/wave_config.gd" id="1_wave"]',
+             '[ext_resource type="Script" path="res://scripts/battle/wave_group.gd" id="2_group"]']
     for key in used:
         path, rid = ENEMIES[key]
         lines.append(f'[ext_resource type="PackedScene" path="{path}" id="{rid}"]')

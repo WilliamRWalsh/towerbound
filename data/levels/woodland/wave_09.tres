@@ -1,12 +1,12 @@
 [gd_resource type="Resource" script_class="WaveConfig" load_steps=13 format=3]
 
-[ext_resource type="Script" path="res://scripts/wave_config.gd" id="1_wave"]
-[ext_resource type="Script" path="res://scripts/wave_group.gd" id="2_group"]
-[ext_resource type="PackedScene" path="res://scenes/skeleton.tscn" id="3_skeleton"]
-[ext_resource type="PackedScene" path="res://scenes/goblin.tscn" id="4_goblin"]
-[ext_resource type="PackedScene" path="res://scenes/big_goblin.tscn" id="5_big_goblin"]
-[ext_resource type="PackedScene" path="res://scenes/giant.tscn" id="6_giant"]
-[ext_resource type="PackedScene" path="res://scenes/zombie.tscn" id="7_zombie"]
+[ext_resource type="Script" path="res://scripts/battle/wave_config.gd" id="1_wave"]
+[ext_resource type="Script" path="res://scripts/battle/wave_group.gd" id="2_group"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/skeleton.tscn" id="3_skeleton"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/goblin.tscn" id="4_goblin"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/big_goblin.tscn" id="5_big_goblin"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/giant.tscn" id="6_giant"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/zombie.tscn" id="7_zombie"]
 
 [sub_resource type="Resource" id="Resource_group1"]
 script = ExtResource("2_group")

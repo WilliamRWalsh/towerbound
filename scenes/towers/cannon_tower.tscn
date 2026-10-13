@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/towers/cannon_tower.gd" id="1_tower"]
+[ext_resource type="Texture2D" path="res://assets/towers/cannon_tower.png" id="2_art"]
+
+[node name="CannonTower" type="Node2D"]
+script = ExtResource("1_tower")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 5
+position = Vector2(0, 42)
+scale = Vector2(0.94, 0.94)
+texture = ExtResource("2_art")
+offset = Vector2(0, -105)
+
+[node name="Gun" type="Node2D" parent="."]

@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/cards/tower_card_data.gd" id="1_card"]
 [ext_resource type="Texture2D" path="res://assets/cards/archer_tower.png" id="2_art"]
-[ext_resource type="PackedScene" path="res://scenes/archer_tower.tscn" id="3_tower"]
-[ext_resource type="Resource" path="res://data/archer_tower.tres" id="4_stats"]
+[ext_resource type="PackedScene" path="res://scenes/towers/archer_tower.tscn" id="3_tower"]
+[ext_resource type="Resource" path="res://data/towers/archer_tower.tres" id="4_stats"]
 
 [resource]
 script = ExtResource("1_card")

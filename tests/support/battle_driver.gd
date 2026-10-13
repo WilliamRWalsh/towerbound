@@ -18,11 +18,11 @@ const BARRICADE := preload("res://data/cards/barricade.tres")
 const OIL := preload("res://data/cards/oil_slick.tres")
 const CHILL := preload("res://data/cards/chill.tres")
 
-const SKELETON := preload("res://scenes/skeleton.tscn")
-const GOBLIN := preload("res://scenes/goblin.tscn")
-const BIG_GOBLIN := preload("res://scenes/big_goblin.tscn")
-const GIANT := preload("res://scenes/giant.tscn")
-const ZOMBIE := preload("res://scenes/zombie.tscn")
+const SKELETON := preload("res://scenes/enemies/skeleton.tscn")
+const GOBLIN := preload("res://scenes/enemies/goblin.tscn")
+const BIG_GOBLIN := preload("res://scenes/enemies/big_goblin.tscn")
+const GIANT := preload("res://scenes/enemies/giant.tscn")
+const ZOMBIE := preload("res://scenes/enemies/zombie.tscn")
 
 var viewport: SubViewport
 var main: Node

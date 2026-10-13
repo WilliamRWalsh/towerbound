@@ -18,7 +18,7 @@ const OIL_COLOR := Color(0.62, 0.45, 0.9)
 
 
 func begin_targeting(field: Battlefield) -> void:
-	field.overlay.show_circle(radius * BuildGrid.MAP_PIXELS_PER_UNIT, OIL_COLOR)
+	field.overlay.show_circle(Units.px(radius), OIL_COLOR)
 
 
 func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool) -> void:
@@ -31,6 +31,6 @@ func play(field: Battlefield, global_pos: Vector2) -> bool:
 	var point := field.road_point(global_pos, SNAP_DISTANCE)
 	if point == Vector2.INF:
 		return false
-	OilSlick.spill(field.ground, point, radius * BuildGrid.MAP_PIXELS_PER_UNIT, slow, duration,
+	OilSlick.spill(field.ground, point, Units.px(radius), slow, duration,
 		burn_dps, burn_duration)
 	return true

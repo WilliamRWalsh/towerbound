@@ -1,15 +1,15 @@
 [gd_scene load_steps=11 format=3]
 
-[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/battle/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/battlefield.tscn" id="2_field"]
-[ext_resource type="Script" path="res://scripts/hand.gd" id="3_hand"]
-[ext_resource type="Script" path="res://scripts/mana_bar.gd" id="4_mana"]
-[ext_resource type="Script" path="res://scripts/banner.gd" id="5_banner"]
-[ext_resource type="Script" path="res://scripts/wave_runner.gd" id="6_waves"]
-[ext_resource type="Script" path="res://scripts/wave_hud.gd" id="7_hud"]
-[ext_resource type="Script" path="res://scripts/health_bar.gd" id="9_health"]
+[ext_resource type="Script" path="res://scripts/ui/hand.gd" id="3_hand"]
+[ext_resource type="Script" path="res://scripts/ui/mana_bar.gd" id="4_mana"]
+[ext_resource type="Script" path="res://scripts/ui/banner.gd" id="5_banner"]
+[ext_resource type="Script" path="res://scripts/battle/wave_runner.gd" id="6_waves"]
+[ext_resource type="Script" path="res://scripts/ui/wave_hud.gd" id="7_hud"]
+[ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="9_health"]
 [ext_resource type="Resource" path="res://data/levels/woodland.tres" id="8_level"]
-[ext_resource type="Script" path="res://scripts/wave_preview.gd" id="10_preview"]
+[ext_resource type="Script" path="res://scripts/ui/wave_preview.gd" id="10_preview"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")

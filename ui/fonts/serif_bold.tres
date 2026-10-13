@@ -1,0 +1,5 @@
+[gd_resource type="SystemFont" format=3]
+
+[resource]
+font_names = PackedStringArray("Baskerville", "Georgia", "Times New Roman", "serif")
+font_weight = 700

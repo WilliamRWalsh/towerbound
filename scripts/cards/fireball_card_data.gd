@@ -16,7 +16,7 @@ func damage_type() -> int:
 
 
 func begin_targeting(field: Battlefield) -> void:
-	field.overlay.show_circle(radius * BuildGrid.MAP_PIXELS_PER_UNIT)
+	field.overlay.show_circle(Units.px(radius))
 
 
 func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool) -> void:
@@ -24,6 +24,6 @@ func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool)
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:
-	Fireball.cast(field.effects, global_pos, damage, radius * BuildGrid.MAP_PIXELS_PER_UNIT,
+	Fireball.cast(field.effects, global_pos, damage, Units.px(radius),
 		field.ground, burn_dps, burn_duration)
 	return true

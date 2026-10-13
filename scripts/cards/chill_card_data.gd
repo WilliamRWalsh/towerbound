@@ -17,7 +17,7 @@ func damage_type() -> int:
 
 
 func begin_targeting(field: Battlefield) -> void:
-	field.overlay.show_circle(radius * BuildGrid.MAP_PIXELS_PER_UNIT, FROST_COLOR)
+	field.overlay.show_circle(Units.px(radius), FROST_COLOR)
 
 
 func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool) -> void:
@@ -25,5 +25,5 @@ func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool)
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:
-	FrostBurst.cast(field.effects, global_pos, damage, radius * BuildGrid.MAP_PIXELS_PER_UNIT, chill_duration)
+	FrostBurst.cast(field.effects, global_pos, damage, Units.px(radius), chill_duration)
 	return true
