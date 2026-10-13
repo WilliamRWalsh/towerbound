@@ -15,7 +15,11 @@ var value := 0.0:
 var max_value := 10.0
 
 
-func _init(starting: float, maximum: float) -> void:
+func _init(starting := 0.0, maximum := 10.0) -> void:
+	reset(starting, maximum)
+
+
+func reset(starting: float, maximum: float) -> void:
 	max_value = maximum
 	value = starting
 

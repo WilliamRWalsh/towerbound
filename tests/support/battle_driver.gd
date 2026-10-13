@@ -185,24 +185,32 @@ func card(title: String) -> Card:
 	return null
 
 
+func card_play() -> CardPlayController:
+	return main.get_node("CardPlay")
+
+
 func selected_card() -> Card:
-	return main._active_card
+	return card_play()._active_card
 
 
 func is_discarding() -> bool:
-	return main._discarding
+	return card_play().is_discarding()
 
 
 func discard_button() -> Button:
-	return main._discard_button
+	return main.get_node("HandLayer/DiscardButton")
+
+
+func chooser() -> UpgradeChooser:
+	return main.get_node("HandLayer/UpgradeChooser")
 
 
 func chooser_open() -> bool:
-	return main._chooser.is_open()
+	return chooser().is_open()
 
 
 func chooser_buttons() -> Array[Button]:
-	return main._chooser._buttons
+	return chooser()._buttons
 
 
 func towers() -> Array[Tower]:

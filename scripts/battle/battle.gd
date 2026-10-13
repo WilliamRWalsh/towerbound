@@ -24,7 +24,8 @@ var state := State.IDLE
 ## 1-based number of the current wave; 0 before the battle starts.
 var wave_number := 0
 var level: LevelConfig
-var mana: ManaPool
+## The same pool for the whole battle, so listeners can connect before `setup`.
+var mana := ManaPool.new()
 var deck: Deck
 
 ## Enemies of the current wave still in play (spawned and not yet killed for good).
@@ -46,7 +47,7 @@ func _ready() -> void:
 ## `start` to begin the first wave once listeners are connected.
 func setup(battle_level: LevelConfig) -> void:
 	level = battle_level
-	mana = ManaPool.new(level.starting_mana, level.max_mana)
+	mana.reset(level.starting_mana, level.max_mana)
 	deck = Deck.new(level.deck)
 	field.castle.reset(level.castle_health)
 	wave_number = 0

@@ -1,18 +1,22 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=16 format=3]
 
-[ext_resource type="Script" path="res://scripts/battle/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/battle/battle_screen.gd" id="1_screen"]
 [ext_resource type="PackedScene" path="res://scenes/battlefield.tscn" id="2_field"]
 [ext_resource type="Script" path="res://scripts/ui/hand.gd" id="3_hand"]
 [ext_resource type="Script" path="res://scripts/ui/mana_bar.gd" id="4_mana"]
 [ext_resource type="Script" path="res://scripts/ui/banner.gd" id="5_banner"]
 [ext_resource type="Script" path="res://scripts/battle/battle.gd" id="6_battle"]
 [ext_resource type="Script" path="res://scripts/ui/wave_hud.gd" id="7_hud"]
-[ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="9_health"]
 [ext_resource type="Resource" path="res://data/levels/woodland.tres" id="8_level"]
+[ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="9_health"]
 [ext_resource type="Script" path="res://scripts/ui/wave_preview.gd" id="10_preview"]
+[ext_resource type="Script" path="res://scripts/battle/card_play_controller.gd" id="11_cards"]
+[ext_resource type="Script" path="res://scripts/ui/hud_layout.gd" id="12_layout"]
+[ext_resource type="Script" path="res://scripts/ui/upgrade_chooser.gd" id="13_chooser"]
+[ext_resource type="PackedScene" path="res://scenes/debug_overlay.tscn" id="14_debug"]
 
-[node name="Main" type="Node"]
-script = ExtResource("1_main")
+[node name="BattleScreen" type="Node"]
+script = ExtResource("1_screen")
 level = ExtResource("8_level")
 
 [node name="Battlefield" parent="." instance=ExtResource("2_field")]
@@ -21,7 +25,22 @@ level = ExtResource("8_level")
 script = ExtResource("6_battle")
 field = NodePath("../Battlefield")
 
-[node name="HandLayer" type="CanvasLayer" parent="."]
+[node name="CardPlay" type="Node" parent="." node_paths=PackedStringArray("battle", "field", "hand", "chooser", "discard_button")]
+script = ExtResource("11_cards")
+battle = NodePath("../Battle")
+field = NodePath("../Battlefield")
+hand = NodePath("../HandLayer/Hand")
+chooser = NodePath("../HandLayer/UpgradeChooser")
+discard_button = NodePath("../HandLayer/DiscardButton")
+
+[node name="HandLayer" type="CanvasLayer" parent="." node_paths=PackedStringArray("hand", "wave_hud", "wave_preview", "health_bar", "mana_bar", "discard_button")]
+script = ExtResource("12_layout")
+hand = NodePath("Hand")
+wave_hud = NodePath("WaveHud")
+wave_preview = NodePath("WavePreview")
+health_bar = NodePath("HealthBar")
+mana_bar = NodePath("ManaBar")
+discard_button = NodePath("DiscardButton")
 
 [node name="WaveHud" type="Control" parent="HandLayer"]
 layout_mode = 3
@@ -34,6 +53,13 @@ layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("10_preview")
+
+[node name="DiscardButton" type="Button" parent="HandLayer"]
+offset_right = 140.0
+offset_bottom = 54.0
+focus_mode = 0
+theme_type_variation = &"DiscardButton"
+text = "Discard"
 
 [node name="Hand" type="Control" parent="HandLayer"]
 layout_mode = 3
@@ -57,6 +83,14 @@ layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("9_health")
+
+[node name="UpgradeChooser" type="Control" parent="HandLayer"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("13_chooser")
+
+[node name="DebugOverlay" parent="." instance=ExtResource("14_debug")]
 
 [node name="MessageLayer" type="CanvasLayer" parent="."]
 layer = 2
