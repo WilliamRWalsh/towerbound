@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="OilCardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/cards/oil_card_data.gd" id="1_card"]
+[ext_resource type="Texture2D" path="res://assets/cards/oil_slick.png" id="2_art"]
+
+[resource]
+script = ExtResource("1_card")
+radius = 55.0
+slow = 0.6
+duration = 25.0
+burn_dps = 2.5
+burn_duration = 7.0
+title = "Oil Slick"
+art = ExtResource("2_art")
+cost = 1

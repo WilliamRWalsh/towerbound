@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TowerCardData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/cards/tower_card_data.gd" id="1_card"]
+[ext_resource type="Texture2D" path="res://assets/cards/cannon_tower.png" id="2_art"]
+[ext_resource type="PackedScene" path="res://scenes/cannon_tower.tscn" id="3_tower"]
+[ext_resource type="Resource" path="res://data/cannon_tower.tres" id="4_stats"]
+
+[resource]
+script = ExtResource("1_card")
+tower_scene = ExtResource("3_tower")
+tower_stats = ExtResource("4_stats")
+title = "Cannon Tower"
+art = ExtResource("2_art")
+cost = 3

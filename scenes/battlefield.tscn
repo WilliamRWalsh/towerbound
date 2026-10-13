@@ -1,0 +1,65 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/battlefield.gd" id="1_field"]
+[ext_resource type="Texture2D" path="res://assets/maps/woodland.png" id="2_map"]
+[ext_resource type="Script" path="res://scripts/build_grid.gd" id="3_grid"]
+[ext_resource type="Texture2D" path="res://assets/maps/woodland_blocked.png" id="4_blocked"]
+[ext_resource type="Script" path="res://scripts/enemy_path.gd" id="5_path"]
+[ext_resource type="Script" path="res://scripts/enemy_spawner.gd" id="6_spawner"]
+[ext_resource type="Script" path="res://scripts/castle.gd" id="7_castle"]
+[ext_resource type="Script" path="res://scripts/target_overlay.gd" id="8_overlay"]
+[ext_resource type="Script" path="res://scripts/castle_turret.gd" id="9_turret"]
+[ext_resource type="Resource" path="res://data/castle_turret.tres" id="10_turret_stats"]
+[ext_resource type="Script" path="res://scripts/barricade_layer.gd" id="11_barricades"]
+
+[node name="Battlefield" type="Node2D"]
+script = ExtResource("1_field")
+
+[node name="Map" type="Sprite2D" parent="."]
+texture = ExtResource("2_map")
+centered = false
+
+[node name="Ground" type="Node2D" parent="."]
+
+[node name="Castle" type="Node2D" parent="."]
+script = ExtResource("7_castle")
+
+[node name="LeftTurret" type="Node2D" parent="Castle" node_paths=PackedStringArray("projectile_layer")]
+position = Vector2(308, 1565)
+script = ExtResource("9_turret")
+turret_stats = ExtResource("10_turret_stats")
+projectile_layer = NodePath("../../Projectiles")
+
+[node name="RightTurret" type="Node2D" parent="Castle" node_paths=PackedStringArray("projectile_layer")]
+position = Vector2(638, 1565)
+script = ExtResource("9_turret")
+turret_stats = ExtResource("10_turret_stats")
+projectile_layer = NodePath("../../Projectiles")
+
+[node name="BuildGrid" type="Node2D" parent="." node_paths=PackedStringArray("projectile_layer")]
+y_sort_enabled = true
+script = ExtResource("3_grid")
+blocked_mask = ExtResource("4_blocked")
+projectile_layer = NodePath("../Projectiles")
+
+[node name="Towers" type="Node2D" parent="BuildGrid"]
+y_sort_enabled = true
+
+[node name="EnemyPath" type="Path2D" parent="BuildGrid"]
+y_sort_enabled = true
+script = ExtResource("5_path")
+
+[node name="Barricades" type="Node2D" parent="BuildGrid" node_paths=PackedStringArray("path")]
+y_sort_enabled = true
+script = ExtResource("11_barricades")
+path = NodePath("../EnemyPath")
+
+[node name="Projectiles" type="Node2D" parent="."]
+
+[node name="TargetOverlay" type="Node2D" parent="."]
+visible = false
+script = ExtResource("8_overlay")
+
+[node name="Spawner" type="Node" parent="." node_paths=PackedStringArray("path")]
+script = ExtResource("6_spawner")
+path = NodePath("../BuildGrid/EnemyPath")

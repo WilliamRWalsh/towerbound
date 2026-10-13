@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="EnemyStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemy_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+display_name = "Giant"
+max_health = 25
+speed = 55.0
+castle_damage = 3.4
+attack_interval = 3.0
+mana_reward = 3.0
+pierce = 0.5
+crush = 1.25
+frost = 0.5

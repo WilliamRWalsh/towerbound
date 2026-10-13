@@ -1,56 +1,72 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/battlefield.tscn" id="2_field"]
+[ext_resource type="Script" path="res://scripts/hand.gd" id="3_hand"]
+[ext_resource type="Script" path="res://scripts/mana_bar.gd" id="4_mana"]
+[ext_resource type="Script" path="res://scripts/banner.gd" id="5_banner"]
+[ext_resource type="Script" path="res://scripts/wave_runner.gd" id="6_waves"]
+[ext_resource type="Script" path="res://scripts/wave_hud.gd" id="7_hud"]
+[ext_resource type="Script" path="res://scripts/health_bar.gd" id="9_health"]
+[ext_resource type="Resource" path="res://data/levels/woodland.tres" id="8_level"]
+[ext_resource type="Script" path="res://scripts/wave_preview.gd" id="10_preview"]
 
-[node name="Main" type="Control"]
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+level = ExtResource("8_level")
+
+[node name="Battlefield" parent="." instance=ExtResource("2_field")]
+
+[node name="WaveRunner" type="Node" parent="." node_paths=PackedStringArray("spawner")]
+script = ExtResource("6_waves")
+spawner = NodePath("../Battlefield/Spawner")
+
+[node name="HandLayer" type="CanvasLayer" parent="."]
+
+[node name="WaveHud" type="Control" parent="HandLayer"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("7_hud")
+
+[node name="WavePreview" type="Control" parent="HandLayer"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("10_preview")
+
+[node name="Hand" type="Control" parent="HandLayer"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_main")
+mouse_filter = 2
+script = ExtResource("3_hand")
 
-[node name="Title" type="Label" parent="."]
-layout_mode = 0
-offset_left = 32.0
-offset_top = 90.0
-offset_right = 688.0
-offset_bottom = 170.0
-theme_override_colors/font_color = Color(0.95, 0.84, 0.56, 1)
-theme_override_font_sizes/font_size = 54
-text = "TOWERBOUND"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="ManaBar" type="Control" parent="HandLayer"]
+texture_filter = 5
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("4_mana")
 
-[node name="Subtitle" type="Label" parent="."]
-layout_mode = 0
-offset_left = 50.0
-offset_top = 168.0
-offset_right = 670.0
-offset_bottom = 222.0
-theme_override_colors/font_color = Color(0.76, 0.81, 0.9, 1)
-theme_override_font_sizes/font_size = 24
-text = "A tower climbing adventure"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="HealthBar" type="Control" parent="HandLayer"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("9_health")
 
-[node name="TowerMark" type="ColorRect" parent="."]
-layout_mode = 0
-offset_left = 280.0
-offset_top = 430.0
-offset_right = 440.0
-offset_bottom = 760.0
-color = Color(0.2, 0.31, 0.47, 1)
+[node name="MessageLayer" type="CanvasLayer" parent="."]
+layer = 2
 
-[node name="StartHint" type="Label" parent="."]
-layout_mode = 0
-offset_left = 48.0
-offset_top = 1050.0
-offset_right = 672.0
-offset_bottom = 1110.0
-theme_override_colors/font_color = Color(0.95, 0.84, 0.56, 1)
-theme_override_font_sizes/font_size = 26
-text = "Your climb begins here"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="Banner" type="Control" parent="MessageLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_banner")
