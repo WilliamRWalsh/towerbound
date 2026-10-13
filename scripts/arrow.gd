@@ -13,6 +13,9 @@ var _target: Enemy
 var _damage := 1.0
 var _damage_type := Damage.Type.PIERCE
 var _speed := 0.0
+## Damage reserved with TargetPlanner until this resolves; the enemy's instance id it is for.
+var _committed := 0.0
+var _committed_to := 0
 var _aim := Vector2.ZERO
 var _traveled := 0.0
 var _done := false
@@ -26,6 +29,8 @@ static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: f
 	arrow._damage = damage
 	arrow._damage_type = damage_type
 	arrow._speed = speed * BuildGrid.MAP_PIXELS_PER_UNIT
+	arrow._committed = TargetPlanner.commit(target, damage, damage_type)
+	arrow._committed_to = target.get_instance_id()
 	layer.add_child(arrow)
 	arrow.position = layer.to_local(from_global)
 	arrow._aim = layer.to_local(target.aim_point())
@@ -43,6 +48,7 @@ func _process(delta: float) -> void:
 	var step := _speed * delta
 	if to_aim.length() <= step + HIT_RADIUS:
 		position = _aim
+		_release()
 		if tracking:
 			_target.take_damage(_damage, _damage_type)
 			queue_free()
@@ -81,3 +87,14 @@ func _draw() -> void:
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(-LENGTH + 9, 0), Vector2(-LENGTH, 0), Vector2(-LENGTH - 4, 6.0 * side), Vector2(-LENGTH + 5, 6.0 * side),
 		]), Color(0.9, 0.2, 0.15))
+
+
+func _exit_tree() -> void:
+	_release()
+
+
+## Hands the reserved damage back to TargetPlanner, once.
+func _release() -> void:
+	if _committed_to != 0:
+		TargetPlanner.release(_committed_to, _committed)
+		_committed_to = 0

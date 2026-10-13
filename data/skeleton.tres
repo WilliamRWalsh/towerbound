@@ -5,10 +5,8 @@
 [resource]
 script = ExtResource("1_stats")
 display_name = "Skeleton"
-max_health = 2
+max_health = 1.5
 speed = 93.0
 castle_damage = 0.85
 attack_interval = 1.8
 mana_reward = 0.3
-pierce = 0.5
-crush = 1.5

@@ -1,7 +1,8 @@
 class_name Tower
 extends Node2D
 ## Base for towers placed on the battlefield. Targets the in-range enemy furthest along the path
-## and fires on a cooldown, using the stats of the card that placed it. Inactive (a placement
+## that TargetPlanner doesn't already count as doomed, holding fire if every one is, and fires on
+## a cooldown, using the stats of the card that placed it. Inactive (a placement
 ## preview) until `activate` is called. Subclasses decide what firing looks like. Upgrade cards
 ## can raise its attack rate once and its ammo capacity once.
 ##
@@ -175,16 +176,10 @@ func _process(delta: float) -> void:
 		_fire(target)
 
 
-## The living enemy in range that is furthest along the path, or null.
+## The living enemy in range furthest along the path that isn't already doomed, or null.
 func find_target() -> Enemy:
 	var reach := stats.attack_range * BuildGrid.MAP_PIXELS_PER_UNIT * global_scale.x
-	var best: Enemy = null
-	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
-		if not enemy.is_alive() or global_position.distance_to(enemy.global_position) > reach:
-			continue
-		if best == null or enemy.progress > best.progress:
-			best = enemy
-	return best
+	return TargetPlanner.pick_target(get_tree(), global_position, reach)
 
 
 func _fire(_target: Enemy) -> void:

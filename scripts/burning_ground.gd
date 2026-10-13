@@ -4,7 +4,9 @@ extends Node2D
 ## its radius, including ones that walk in later; kills pay out through the enemy's own `died`
 ## signal. Every tick it also ignites any Oil Slick it touches, so fire spreads along oil. Sits on
 ## the ground layer, under the enemies. Works in its parent's (map-pixel) coordinates.
+## TargetPlanner reads its upcoming ticks to predict burn kills.
 
+const GROUP := "burning_ground"
 const TICK := 0.5
 const FADE_TIME := 0.6
 const FLAME := Color(1.0, 0.55, 0.12)
@@ -29,6 +31,7 @@ static func ignite(layer: Node2D, target_global: Vector2, radius: float, damage_
 	for i in 14:
 		var spot := Vector2.from_angle(randf() * TAU) * sqrt(randf()) * radius * 0.8
 		ground._flames.append([spot, randf() * TAU, randf_range(0.7, 1.2)])
+	ground.add_to_group(GROUP)
 	layer.add_child(ground)
 	ground.position = layer.to_local(target_global)
 	return ground
@@ -44,12 +47,32 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## Seconds from now of each burn tick still to come within `horizon`.
+func upcoming_ticks(horizon: float) -> PackedFloat32Array:
+	var times := PackedFloat32Array()
+	var tick := _next_tick
+	while tick <= _duration and tick - _age <= horizon:
+		times.append(maxf(0.0, tick - _age))
+		tick += TICK
+	return times
+
+
+## Damage one tick deals before resistances.
+func tick_damage() -> float:
+	return _damage_per_second * TICK
+
+
+## Whether a canvas position is inside the patch, by the same test `_burn` uses.
+func contains(point_global: Vector2) -> bool:
+	var parent := get_parent() as Node2D
+	return parent.to_local(point_global).distance_to(position) <= _radius
+
+
 ## Enemies leave the group when the battle ends, so a patch can't hurt anything after a result.
 func _burn(amount: float) -> void:
-	var parent := get_parent() as Node2D
 	var hit: Array[Enemy] = []
 	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
-		if enemy.is_alive() and parent.to_local(enemy.global_position).distance_to(position) <= _radius:
+		if enemy.is_alive() and contains(enemy.global_position):
 			hit.append(enemy)
 	for enemy in hit:
 		enemy.take_damage(amount, Damage.Type.FIRE)

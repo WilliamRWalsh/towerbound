@@ -5,7 +5,7 @@ extends Resource
 
 ## Shown in the wave preview.
 @export var display_name := ""
-@export var max_health := 3
+@export var max_health := 3.0
 @export var speed := 85.0
 ## Castle (or barricade) health lost each time this enemy strikes it.
 @export var castle_damage := 1.0

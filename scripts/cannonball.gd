@@ -15,6 +15,9 @@ var _target: Enemy
 var _damage := 1.0
 var _damage_type := Damage.Type.PIERCE
 var _speed := 0.0
+## Damage reserved with TargetPlanner until this resolves; the enemy's instance id it is for.
+var _committed := 0.0
+var _committed_to := 0
 var _from := Vector2.ZERO
 var _aim := Vector2.ZERO
 ## Fraction of the flight completed.
@@ -31,6 +34,8 @@ static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: f
 	ball._damage = damage
 	ball._damage_type = damage_type
 	ball._speed = speed * BuildGrid.MAP_PIXELS_PER_UNIT
+	ball._committed = TargetPlanner.commit(target, damage, damage_type)
+	ball._committed_to = target.get_instance_id()
 	layer.add_child(ball)
 	ball._from = layer.to_local(from_global)
 	ball._aim = layer.to_local(target.aim_point())
@@ -53,6 +58,7 @@ func _process(delta: float) -> void:
 	_progress = minf(1.0, _progress + _speed * delta / flight)
 	position = _from.lerp(_aim, _progress) + Vector2(0, -_arc * 4.0 * _progress * (1.0 - _progress))
 	if _progress >= 1.0:
+		_release()
 		if tracking:
 			_target.take_damage(_damage, _damage_type)
 		_impact = 0.0
@@ -72,3 +78,14 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, RADIUS + 1.5, Color(0.06, 0.06, 0.07))
 	draw_circle(Vector2.ZERO, RADIUS, Color(0.24, 0.25, 0.28))
 	draw_circle(Vector2(-2.5, -2.5), 2.6, Color(0.62, 0.64, 0.7))
+
+
+func _exit_tree() -> void:
+	_release()
+
+
+## Hands the reserved damage back to TargetPlanner, once.
+func _release() -> void:
+	if _committed_to != 0:
+		TargetPlanner.release(_committed_to, _committed)
+		_committed_to = 0

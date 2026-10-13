@@ -60,7 +60,7 @@ These defaults make the first slice implementable. They are not final game balan
 | Mana cap | 10 |
 | Archer Tower cost | 2 mana |
 | Mana per skeleton killed | 1 |
-| Skeleton health | 3 |
+| Skeleton health | 1.5 (changed from 3, then 2; see log) |
 | Skeleton castle damage | 0.85 (changed from 1; see log) |
 | Archer Tower damage | 1.5 per shot (changed from 1; see log) |
 | Archer Tower firing interval | 1 second |
@@ -401,4 +401,18 @@ Run these checks as the corresponding systems become available and repeat the co
     - Screenshots of the chooser and the upgraded tower (badge plus three pips) were reviewed.
     - Not yet checked on the iOS simulator or the phone.
 - 2026-10-12 — Stronger towers and more starting mana (tuning, at the user's request; milestones unchanged). Starting mana changed from 5 to 6. Archer Tower arrows deal 1.5 instead of 1 (0.75 to skeletons, 2.25 to big goblins). Castle turret arrows deal 0.75 instead of 0.25, half an Archer Tower's. The Cannon Tower fires every 2.0 s instead of 2.5 s (25% faster). The printed card stats were not redrawn. Validated: the project ran headless with no errors, and `run_ios_device.sh` built, installed, and launched it on the iPhone. Not play-tested.
+- 2026-10-12 — Arrows one-shot skeletons and two-shot goblins (tuning, at the user's request; milestones unchanged). Skeleton health changed from 2 to 1.5, and its pierce ×0.5 and crush ×1.5 multipliers were removed. Goblins were already neutral and keep 3 health. `EnemyStats.max_health` is now a float. With 1.5-damage arrows, a skeleton takes one arrow and a goblin two. Side effects: castle turret arrows (0.75) now take two hits on a skeleton instead of three, and a cannonball deals 3 to a skeleton instead of 4.5, which still kills it. Validated: a headless check printed 1 arrow for a skeleton and 2 for a goblin, and the main scene ran headless for 300 frames with no errors. Not play-tested.
+- 2026-10-12 — Oil Slick and Chill card art without the tower (requested by the user so cards are easier to tell apart; milestones unchanged). These two cards were still painted over the Archer Tower painting. `tools/make_spell_cards.py` now paints them on the shared `card_scenery.py` landscape, like Fireball, Barricade, and Repair. Oil Slick is a glossy black pool on the meadow road, with thin rainbow sheen, sky glints, and droplet rings. Chill is a frosted winter meadow with a cracked sheet of ice, ice shards at its rim, and falling snow. Upgrade keeps its tower because it targets towers. Text and stats are unchanged. Validated by reviewing the rendered cards; not checked in game or on the iOS simulator.
+- 2026-10-12 — Smarter tower targeting: no overkill (requested by the user; milestones unchanged).
+  - **Behavior:** Towers and castle turrets still shoot the in-range enemy furthest along the path, but they now skip enemies that are already doomed. They pick the next enemy instead, or hold fire if every enemy in range is doomed. A held tower keeps its cooldown at 0 and spends no charge.
+  - **What counts as doomed:** An enemy is doomed when the damage already on its way covers its health. That damage is the projectiles in flight at it (after its resistances) plus the burn it will take from burning ground in the next 1.5 s (`BURN_HORIZON`). The burn prediction moves walking enemies along the path at their current speed, and enemies at the gate or a barricade stay put.
+  - **Code:** `TargetPlanner` (`scripts/target_planner.gd`) is a static service that holds all of this logic. `Tower.find_target` calls `TargetPlanner.pick_target`. `Arrow` and `Cannonball` commit their damage when launched. They release it once: on hit, on a harmless landing, or when they leave the tree, so a restart can't leak. `BurningGround` joins the `burning_ground` group and exposes `upcoming_ticks`, `tick_damage`, and `contains`. Instant effects (Fireball and Chill impacts, caltrops) aren't predicted.
+  - **Validation:** A headless script placed three Archer Towers around one road point, with the castle turrets silenced.
+    - A skeleton drew exactly 1 arrow, and a goblin drew exactly 2.
+    - A 0.5-health goblin in a fresh burn patch was doomed. The towers fired nothing, and the burn killed it.
+    - A full-health goblin in the patch drew 1 arrow, and the burn finished it.
+    - 6 walking skeletons took 6 arrows for 6 kills.
+    - The ledger was empty after each case and after the scene was freed with arrows in flight.
+    - The main scene ran headless for 300 frames with no errors.
+    - Not checked in a full ten-wave run or on the iOS simulator.
 - Add subsequent entries with the milestone, completed behavior, validation performed, and any tuning changes with their reason.

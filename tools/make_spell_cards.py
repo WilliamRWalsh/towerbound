@@ -1,4 +1,4 @@
-"""One-off asset tool: builds the Fireball, Upgrade, Repair, and Barricade cards from sketches/archer.png,
+"""One-off asset tool: builds the Fireball, Upgrade, Repair, Barricade, Oil Slick, and Chill cards from sketches/archer.png,
 so they share the Archer Tower card's frame.
 
 Runs the archer card's cleanup (cost, second archer, background castle), then paints each card:
@@ -8,6 +8,8 @@ Runs the archer card's cleanup (cost, second archer, background castle), then pa
 - Repair: a castle wall with a breach, stones rising back into it on golden trails, scaffolding,
   and a glowing hammer.
 - Barricade: a spiked wooden barricade across the road through a meadow.
+- Oil Slick: a glossy black pool with rainbow sheen spread across the meadow road.
+- Chill: a frosted winter meadow with a cracked patch of ice and shards around its rim.
 Rewrites the cost, title, description, icon, and the three stat boxes (value and label).
 Requires numpy, scipy, and Pillow: python tools/make_spell_cards.py [card names...]
 Without names it builds every card.
@@ -644,65 +646,81 @@ def icon_barricade(d, cx, cy, color):
 
 # --- Oil Slick --------------------------------------------------------------------------------
 
-def blob_points(cx, cy, rx, ry, rng, n=48, jitter=0.12):
+SLICK_CENTER = np.array([420.0, 712.0])  # middle of the pool on the road, card coordinates
+SLICK_RADII = (330.0, 104.0)
+
+
+def blob_points(cx, cy, rx, ry, rng, n=64, jitter=0.12):
     """An irregular puddle outline around an ellipse."""
     angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
     wobble = 1 + jitter * np.sin(angles * 3 + rng.uniform(0, 6)) + jitter * 0.6 * np.sin(angles * 7 + rng.uniform(0, 6))
     return [(cx + np.cos(a) * rx * w, cy + np.sin(a) * ry * w) for a, w in zip(angles, wobble)]
 
 
-def paint_oil_slick(rgb):
-    img = to_image(rgb)
-    ox, oy = OFFSET
+def soft_mask(size, polygons, blur):
+    m = Image.new("L", size, 0)
+    d = ImageDraw.Draw(m)
+    for poly in polygons:
+        d.polygon(poly, fill=255)
+    return np.array(m.filter(ImageFilter.GaussianBlur(blur))).astype(np.float64) / 255
+
+
+def paint_oil_slick(painting):
     rng = np.random.default_rng(11)
-    # Shade the foreground so the dark pool reads against the rocks.
-    shade = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ImageDraw.Draw(shade).ellipse([20 + ox, 620 + oy, 820 + ox, 960 + oy], fill=(10, 6, 14, 130))
-    img.alpha_composite(shade.filter(ImageFilter.GaussianBlur(30)))
+    img = to_image(scenery.landscape(painting, rng, cover=0.15))
+    size = img.size
+    c = SLICK_CENTER + OFFSET
+    rx, ry = SLICK_RADII
+    # The pool, with a few splashes and runs around its edge.
+    pools = [blob_points(c[0], c[1], rx, ry, rng)]
+    for _ in range(9):
+        a = rng.uniform(0, 2 * np.pi)
+        d = rng.uniform(1.0, 1.22)
+        r = rng.uniform(16, 42)
+        pools.append(blob_points(c[0] + np.cos(a) * rx * d, c[1] + np.sin(a) * ry * d, r, r * 0.32, rng, jitter=0.2))
 
-    pool = blob_points(450 + ox, 755 + oy, 330, 78, rng)
-    def puddle(d):
-        d.polygon([(x + 6, y + 10) for x, y in pool], fill=(0, 0, 0, 150))
-    glow(img, puddle, 10)
-    def oil(d):
-        d.polygon(pool, fill=(16, 12, 22, 255))
-    glow(img, oil, 1)
-    # Rainbow sheen: soft arcs of purple, teal, and gold floating on the oil.
-    def sheen(d):
-        for (cx, cy, rx, ry, color) in [(380, 742, 150, 30, (140, 90, 200, 150)), (520, 770, 120, 24, (60, 170, 160, 140)),
-                                        (330, 775, 90, 16, (200, 160, 70, 110)), (600, 735, 80, 16, (150, 100, 210, 120))]:
-            d.arc([cx - rx + ox, cy - ry + oy, cx + rx + ox, cy + ry + oy], 190, 340, fill=color, width=9)
-    glow(img, sheen, 5)
-    def highlights(d):
-        for (cx, cy, rx, ry) in [(400, 735, 120, 22), (540, 765, 70, 12)]:
-            d.arc([cx - rx + ox, cy - ry + oy, cx + rx + ox, cy + ry + oy], 210, 300, fill=(235, 230, 255, 200), width=4)
-    glow(img, highlights, 1)
+    # A dark stain soaked into the ground around the pool, then the pool's shadowed rim.
+    stain = soft_mask(size, [blob_points(c[0], c[1] + 6, rx * 1.05, ry * 1.1, rng)], 8)
+    rgb = to_array(img)
+    rgb = rgb * (1 - stain[..., None] * 0.45)
+    pool = soft_mask(size, pools, 1.5)
 
-    # A barrel tipped on its side at the left, oil pouring from its open end into the pool.
-    def barrel(d):
-        body = [(120 + ox, 600 + oy), (300 + ox, 640 + oy), (300 + ox, 760 + oy), (120 + ox, 720 + oy)]
-        d.polygon([(x + 8, y + 14) for x, y in body], fill=(0, 0, 0, 120))
-        d.polygon(body, fill=(112, 70, 36, 255))
-        for k in range(1, 5):
-            t0 = k / 5
-            d.line([(120 + ox + 180 * t0, 600 + oy + 40 * t0), (120 + ox + 180 * t0, 720 + oy + 40 * t0)],
-                   fill=(70, 42, 20, 255), width=3)
-        for t0 in (0.18, 0.82):
-            d.line([(120 + ox + 180 * t0, 600 + oy + 40 * t0), (120 + ox + 180 * t0, 720 + oy + 40 * t0)],
-                   fill=(54, 52, 56, 255), width=12)
-        d.ellipse([268 + ox, 636 + oy, 332 + ox, 764 + oy], fill=(90, 56, 28, 255), outline=(54, 52, 56, 255), width=10)
-        d.ellipse([284 + ox, 660 + oy, 318 + ox, 740 + oy], fill=(14, 10, 18, 255))
-        # The pour: a glossy black tongue from the barrel mouth down into the pool.
-        d.polygon([(300 + ox, 690 + oy), (318 + ox, 700 + oy), (360 + ox, 760 + oy), (300 + ox, 770 + oy)],
-                  fill=(16, 12, 22, 255))
-        d.line([(306 + ox, 698 + oy), (340 + ox, 752 + oy)], fill=(170, 150, 210, 200), width=3)
-    glow(img, barrel, 0)
-    # Drips on the pool.
+    # Oil: near-black, reflecting the sky toward the far edge and glossier in the middle.
+    h, w = pool.shape
+    ys, xs = np.mgrid[:h, :w].astype(np.float64)
+    v = np.clip((ys - (c[1] - ry)) / (2 * ry), 0, 1)  # 0 far edge, 1 near edge
+    base = scenery.lerp((52, 54, 74), (10, 8, 14), np.clip(v * 1.6, 0, 1)[..., None])
+    # Thin-film sheen: swirling bands of rainbow color, stretched along the ground's perspective.
+    n = np.zeros((h, w))
+    for s, wgt in ((26, 1.0), (10, 0.45)):
+        g = ndimage.gaussian_filter(rng.normal(size=(h, w)), (s * 0.35, s))
+        n += g / g.std() * wgt
+    phase = n * 0.8 + xs / 300
+    hue = np.stack([np.sin(phase * 2.4 + k) for k in (0.0, 2.1, 4.2)], -1) * 0.5 + 0.5
+    film = np.stack([120 + 120 * hue[..., 0], 60 + 130 * hue[..., 1], 110 + 130 * hue[..., 2]], -1)
+    # Thin swirling ribbons, strongest in the middle distance where the surface catches the light.
+    ribbons = np.exp(-np.sin(n * 2.2 + ys / 30) ** 2 / 0.05)
+    bands = ribbons * np.clip(1.1 - np.abs(v - 0.45) * 1.6, 0, 1)
+    oil = scenery.lerp(base, film, (bands * 0.45)[..., None])
+    rgb = rgb * (1 - pool[..., None]) + oil * pool[..., None]
+    img = to_image(np.clip(rgb, 0, 255))
+
+    # Glints: the sky caught in long thin highlights on the surface.
+    def glints(d):
+        for (dx, dy, lx, ly, a0, a1) in [(-60, -40, 190, 34, 200, 320), (120, 10, 120, 20, 205, 300),
+                                          (-180, 20, 70, 12, 210, 300), (40, 50, 160, 22, 30, 140)]:
+            d.arc([c[0] + dx - lx, c[1] + dy - ly, c[0] + dx + lx, c[1] + dy + ly], a0, a1,
+                  fill=(232, 236, 255, 190), width=4)
+    glow(img, glints, 4)
+    glow(img, glints, 0)
+    # Bubbles and droplet rings.
     def drips(d):
-        for _ in range(10):
-            x, y = rng.uniform(260, 680) + ox, rng.uniform(720, 800) + oy
-            r = rng.uniform(4, 9)
-            d.ellipse([x - r, y - r * 0.45, x + r, y + r * 0.45], outline=(120, 100, 160, 160), width=2)
+        for _ in range(16):
+            a, r = rng.uniform(0, 2 * np.pi), np.sqrt(rng.uniform(0, 1)) * 0.8
+            x, y = c[0] + np.cos(a) * r * rx, c[1] + np.sin(a) * r * ry
+            s = rng.uniform(5, 13)
+            d.ellipse([x - s, y - s * 0.4, x + s, y + s * 0.4], outline=(150, 140, 200, 170), width=2)
+            d.ellipse([x - s * 0.3, y - s * 0.35, x + s * 0.1, y - s * 0.1], fill=(235, 235, 255, 200))
     glow(img, drips, 0)
     return to_array(img)
 
@@ -714,6 +732,18 @@ def icon_drop(d, cx, cy, color):
 
 
 # --- Chill ------------------------------------------------------------------------------------
+
+WINTER = {
+    "sky_top": (96, 132, 186), "sky_horizon": (214, 228, 240), "cloud_lit": (246, 250, 255),
+    "cloud_shade": (164, 180, 206), "far_lit": (186, 200, 226), "far_dark": (98, 116, 160),
+    "snow": (246, 250, 255), "far_haze": (196, 212, 234), "near_lit": (150, 172, 190),
+    "near_dark": (74, 96, 118), "near_haze": (190, 208, 226), "ground_haze": (200, 216, 232),
+    "back_pine": ((70, 96, 110), (120, 146, 160)), "front_pine": ((36, 66, 70), (96, 130, 136)),
+    "ground_tint": (0.92, 1.0, 1.12),
+}
+ICE_CENTER = np.array([420.0, 712.0])
+ICE_RADII = (320.0, 102.0)
+
 
 def snowflake(d, cx, cy, size, color, width):
     for k in range(6):
@@ -728,62 +758,105 @@ def snowflake(d, cx, cy, size, color, width):
                 d.line([(bx, by), (ex, ey)], fill=color, width=max(2, width - 2))
 
 
-def paint_chill(rgb):
-    # Freeze the painting: shift toward icy blue and lift the shadows.
-    mask = art_mask((rgb.shape[1], rgb.shape[0]))
-    cold = rgb * np.array([0.72, 0.88, 1.08]) + np.array([20, 42, 70])
-    rgb = rgb * (1 - mask * 0.8) + np.clip(cold, 0, 255) * mask * 0.8
-    img = to_image(np.clip(rgb, 0, 255))
-    ox, oy = OFFSET
+def paint_chill(painting):
     rng = np.random.default_rng(5)
+    rgb = scenery.landscape(painting, rng, WINTER, cover=0.1)
+    size = (rgb.shape[1], rgb.shape[0])
+    c = ICE_CENTER + OFFSET
+    rx, ry = ICE_RADII
+    h, w, _ = rgb.shape
+    ys, xs = np.mgrid[:h, :w].astype(np.float64)
 
-    # Frost creeping in from the edges of the painting: a pale, blurred rim.
-    rim = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    x0, y0, x1, y1 = (v + o for v, o in zip(ART_BOX, (*OFFSET, *OFFSET)))
-    rd = ImageDraw.Draw(rim)
-    rd.rounded_rectangle([x0, y0, x1, y1], radius=40, outline=(225, 242, 255, 210), width=70)
-    img.alpha_composite(rim.filter(ImageFilter.GaussianBlur(28)))
-    # Frost ferns: branching crystal lines growing in from the corners.
-    def ferns(d):
-        for (sx, sy, ang) in [(80, 80, 0.8), (760, 80, 2.35), (80, 830, -0.8), (760, 830, -2.35),
-                              (80, 450, 0.0), (760, 450, np.pi)]:
-            for _ in range(5):
-                a = ang + rng.uniform(-0.5, 0.5)
-                length = rng.uniform(90, 170)
-                ex, ey = sx + np.cos(a) * length, sy + np.sin(a) * length
-                d.line([(sx + ox, sy + oy), (ex + ox, ey + oy)], fill=(235, 248, 255, 230), width=3)
-                for t0 in np.linspace(0.25, 0.85, 4):
-                    bx, by = sx + np.cos(a) * length * t0, sy + np.sin(a) * length * t0
-                    for turn in (0.6, -0.6):
-                        bl = length * 0.22 * (1 - t0 * 0.5)
-                        d.line([(bx + ox, by + oy), (bx + np.cos(a + turn) * bl + ox, by + np.sin(a + turn) * bl + oy)],
-                               fill=(235, 248, 255, 200), width=2)
-    glow(img, ferns, 2)
-    glow(img, ferns, 0)
+    # Hoarfrost dusting the meadow around the patch.
+    frost = np.clip(1.3 - np.hypot((xs - c[0]) / (rx * 1.7), (ys - c[1]) / (ry * 2.4)), 0, 1)
+    speck = ndimage.gaussian_filter(rng.normal(size=(h, w)), 1.2)
+    frost = frost * np.clip(0.55 + speck / speck.std() * 0.35, 0, 1) * (ys > 545 + OFFSET[1])
+    rgb = scenery.over(rgb, (232, 242, 252), frost * 0.75)
 
-    # A burst of frost: a glowing ring and a big snowflake over the right side of the sky.
-    center = np.array([590.0, 330.0]) + OFFSET
-    img.alpha_composite(radial(img.size, center, 260, (190, 230, 255), 0.85))
-    def burst(d):
-        cx, cy = center
-        for r, a, w in [(150, 200, 10), (110, 140, 5)]:
-            d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(225, 245, 255, a), width=w)
-        for k in range(16):
-            ang = k / 16 * 2 * np.pi + rng.uniform(-0.1, 0.1)
-            r0, r1 = 120, rng.uniform(170, 215)
-            p0 = (cx + np.cos(ang) * r0, cy + np.sin(ang) * r0)
-            p1 = (cx + np.cos(ang) * r1, cy + np.sin(ang) * r1)
-            side = np.array([-np.sin(ang), np.cos(ang)]) * 7
-            d.polygon([p1, (p0[0] + side[0], p0[1] + side[1]), (p0[0] - side[0], p0[1] - side[1])],
-                      fill=(220, 242, 255, 220))
-    glow(img, burst, 3)
-    glow(img, burst, 0)
-    def flake(d):
-        snowflake(d, center[0], center[1], 92, (60, 120, 190, 255), 16)
-        snowflake(d, center[0], center[1], 88, (240, 250, 255, 255), 9)
-    glow(img, flake, 6)
-    glow(img, flake, 0)
-    sparkles(img, rng, 26, (90, 90, 750, 820), (245, 252, 255, 230), (3, 9))
+    # The ice: a glassy sheet, pale at the far edge where it mirrors the sky, deep blue nearer.
+    outline = blob_points(c[0], c[1], rx, ry, rng, jitter=0.08)
+    ice = soft_mask(size, [outline], 1.5)
+    rim = soft_mask(size, [blob_points(c[0], c[1] + 4, rx * 1.06, ry * 1.12, rng, jitter=0.08)], 6)
+    rgb = scenery.over(rgb, (240, 248, 255), rim * 0.9)
+    v = np.clip((ys - (c[1] - ry)) / (2 * ry), 0, 1)
+    sheet = scenery.lerp((214, 236, 252), (70, 140, 200), (v ** 1.2)[..., None])
+    cloud = ndimage.gaussian_filter(rng.normal(size=(h, w)), (4, 18))
+    sheet = sheet * (1 + cloud[..., None] / cloud.std() * 0.06)
+    # Trapped bubbles and white frost streaks inside the ice.
+    streaks = np.clip(ndimage.gaussian_filter(rng.normal(size=(h, w)), (2, 22)) / 0.02 - 1.2, 0, 1)
+    sheet = scenery.lerp(sheet, (236, 246, 255), (streaks * 0.5)[..., None])
+    rgb = rgb * (1 - ice[..., None]) + sheet * ice[..., None]
+    img = to_image(np.clip(rgb, 0, 255))
+
+    # Cracks spreading from a point of impact.
+    hit = c + np.array([-40.0, 14.0])
+    def cracks(d):
+        for k in range(11):
+            a = k / 11 * 2 * np.pi + rng.uniform(-0.2, 0.2)
+            p = hit.copy()
+            pts = [tuple(p)]
+            for _ in range(6):
+                a += rng.uniform(-0.45, 0.45)
+                p = p + np.array([np.cos(a) * rx, np.sin(a) * ry]) * rng.uniform(0.1, 0.17)
+                pts.append(tuple(p))
+            d.line(pts, fill=(250, 254, 255, 230), width=3)
+        for r in (0.18, 0.34):
+            d.ellipse([hit[0] - rx * r, hit[1] - ry * r, hit[0] + rx * r, hit[1] + ry * r], outline=(250, 254, 255, 170),
+                      width=2)
+    crack_layer = Image.new("RGBA", size, (0, 0, 0, 0))
+    cracks(ImageDraw.Draw(crack_layer))
+    a = np.array(crack_layer.getchannel("A")).astype(np.float64) * ice
+    crack_layer.putalpha(Image.fromarray(a.astype(np.uint8)))
+    img.alpha_composite(crack_layer.filter(ImageFilter.GaussianBlur(3)))
+    img.alpha_composite(crack_layer)
+
+    # Shine: a broad sky reflection and a few sharp glints.
+    def shine(d):
+        d.ellipse([c[0] - 210, c[1] - 78, c[0] + 120, c[1] - 40], fill=(255, 255, 255, 120))
+    glow(img, shine, 14)
+    def glints(d):
+        for (dx, dy, lx, ly, a0, a1) in [(-40, -50, 200, 30, 200, 320), (150, 20, 90, 16, 210, 310)]:
+            d.arc([c[0] + dx - lx, c[1] + dy - ly, c[0] + dx + lx, c[1] + dy + ly], a0, a1,
+                  fill=(255, 255, 255, 230), width=4)
+    glow(img, glints, 0)
+
+    # Jagged ice shards jutting up around the rim, back ones first.
+    shards = []
+    for base_a in (0.35, 2.6, 3.5, 5.9):
+        for _ in range(4):
+            a = base_a + rng.uniform(-0.18, 0.18)
+            x, y = c[0] + np.cos(a) * rx * rng.uniform(0.98, 1.06), c[1] + np.sin(a) * ry * rng.uniform(0.98, 1.08)
+            near = (y - (c[1] - ry)) / (2 * ry)
+            shards.append((y, x, rng.uniform(24, 64) * (0.6 + 0.6 * near), rng.uniform(-0.5, 0.5)))
+    shards.sort()
+    def shard_shapes(d):
+        for y, x, hgt, lean in shards:
+            wid = hgt * 0.3
+            tip = (x + lean * hgt, y - hgt)
+            d.polygon([(x - wid, y), tip, (x + wid, y)], fill=(150, 200, 236, 245))
+            d.polygon([(x - wid, y), tip, (x - wid * 0.1, y)], fill=(236, 248, 255, 250))
+            d.line([tip, (x + wid * 0.2, y)], fill=(255, 255, 255, 200), width=2)
+    def shard_shadow(d):
+        for y, x, hgt, lean in shards:
+            d.ellipse([x - hgt * 0.3, y - 6, x + hgt * 0.4, y + 8], fill=(40, 70, 110, 90))
+    glow(img, shard_shadow, 5)
+    glow(img, shard_shapes, 6)
+    glow(img, shard_shapes, 0)
+
+    # A cold glow, drifting snow, and twinkles.
+    img.alpha_composite(radial(size, c - np.array([0, 40]), 380, (200, 232, 255), 0.35))
+    def snow(d):
+        for _ in range(90):
+            x, y = rng.uniform(70, 790) + OFFSET[0], rng.uniform(70, 840) + OFFSET[1]
+            r = rng.uniform(1.5, 4.5)
+            d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, int(rng.uniform(150, 240))))
+    glow(img, snow, 0)
+    def flakes(d):
+        for x, y, s in ((170, 250, 26), (650, 180, 34), (560, 420, 20), (260, 450, 18)):
+            snowflake(d, x + OFFSET[0], y + OFFSET[1], s, (255, 255, 255, 230), 4)
+    glow(img, flakes, 3)
+    glow(img, flakes, 0)
+    sparkles(img, rng, 20, (120, 600, 720, 820), (255, 255, 255, 240), (4, 10))
     return to_array(img)
 
 
