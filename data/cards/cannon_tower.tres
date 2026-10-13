@@ -1,14 +1,26 @@
-[gd_resource type="Resource" script_class="TowerCardData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" path="res://scripts/cards/tower_card_data.gd" id="1_card"]
-[ext_resource type="Texture2D" path="res://assets/cards/cannon_tower.png" id="2_art"]
-[ext_resource type="PackedScene" path="res://scenes/towers/cannon_tower.tscn" id="3_tower"]
-[ext_resource type="Resource" path="res://data/towers/cannon_tower.tres" id="4_stats"]
+[ext_resource type="Texture2D" path="res://assets/cards/cannon_tower.png" id="1_jall5"]
+[ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_03pii"]
+[ext_resource type="Script" path="res://scripts/cards/effects/place_tower_effect.gd" id="3_nnely"]
+[ext_resource type="PackedScene" path="res://scenes/towers/cannon_tower.tscn" id="4_x3aca"]
+[ext_resource type="Resource" path="res://data/towers/cannon_tower.tres" id="5_7jt1n"]
+[ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="6_ukg48"]
+[ext_resource type="Script" path="res://scripts/cards/targeting/cell_targeting.gd" id="7_fdxvm"]
+
+[sub_resource type="Resource" id="Resource_sv6s3"]
+script = ExtResource("3_nnely")
+tower_scene = ExtResource("4_x3aca")
+tower_stats = ExtResource("5_7jt1n")
+
+[sub_resource type="Resource" id="Resource_t265y"]
+script = ExtResource("7_fdxvm")
 
 [resource]
-script = ExtResource("1_card")
-tower_scene = ExtResource("3_tower")
-tower_stats = ExtResource("4_stats")
+script = ExtResource("6_ukg48")
+id = &"cannon_tower"
 title = "Cannon Tower"
-art = ExtResource("2_art")
+art = ExtResource("1_jall5")
 cost = 3
+targeting = SubResource("Resource_t265y")
+effects = Array[ExtResource("2_03pii")]([SubResource("Resource_sv6s3")])

@@ -1,14 +1,26 @@
-[gd_resource type="Resource" script_class="UpgradeCardData" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" path="res://scripts/cards/upgrade_card_data.gd" id="1_card"]
-[ext_resource type="Texture2D" path="res://assets/cards/upgrade.png" id="2_art"]
-[ext_resource type="Script" path="res://scripts/towers/upgrades/tower_upgrade.gd" id="3_upgrade"]
-[ext_resource type="Resource" path="res://data/upgrades/rate.tres" id="4_rate"]
-[ext_resource type="Resource" path="res://data/upgrades/ammo.tres" id="5_ammo"]
+[ext_resource type="Texture2D" path="res://assets/cards/upgrade.png" id="1_evgg3"]
+[ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_mxhfx"]
+[ext_resource type="Script" path="res://scripts/cards/effects/upgrade_tower_effect.gd" id="3_a6mo6"]
+[ext_resource type="Script" path="res://scripts/towers/upgrades/tower_upgrade.gd" id="4_s0ii1"]
+[ext_resource type="Resource" path="res://data/upgrades/rate.tres" id="5_iorwa"]
+[ext_resource type="Resource" path="res://data/upgrades/ammo.tres" id="6_px3ll"]
+[ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="7_n3ptq"]
+[ext_resource type="Script" path="res://scripts/cards/targeting/tower_targeting.gd" id="8_ybnkf"]
+
+[sub_resource type="Resource" id="Resource_dnyis"]
+script = ExtResource("3_a6mo6")
+upgrades = Array[ExtResource("4_s0ii1")]([ExtResource("5_iorwa"), ExtResource("6_px3ll")])
+
+[sub_resource type="Resource" id="Resource_q2mso"]
+script = ExtResource("8_ybnkf")
 
 [resource]
-script = ExtResource("1_card")
-upgrades = Array[ExtResource("3_upgrade")]([ExtResource("4_rate"), ExtResource("5_ammo")])
+script = ExtResource("7_n3ptq")
+id = &"upgrade"
 title = "Upgrade"
-art = ExtResource("2_art")
+art = ExtResource("1_evgg3")
 cost = 3
+targeting = SubResource("Resource_q2mso")
+effects = Array[ExtResource("2_mxhfx")]([SubResource("Resource_dnyis")])

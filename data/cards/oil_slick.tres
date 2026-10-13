@@ -1,19 +1,34 @@
-[gd_resource type="Resource" script_class="OilCardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" path="res://scripts/cards/oil_card_data.gd" id="1_card"]
-[ext_resource type="Texture2D" path="res://assets/cards/oil_slick.png" id="2_art"]
-[ext_resource type="Script" path="res://scripts/combat/burn_spec.gd" id="2_j8b56"]
-[ext_resource type="Resource" path="res://data/status/oil_slow.tres" id="4_1wxih"]
+[ext_resource type="Texture2D" path="res://assets/cards/oil_slick.png" id="1_4i6qn"]
+[ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_51fy5"]
+[ext_resource type="Script" path="res://scripts/combat/burn_spec.gd" id="3_qwoqt"]
+[ext_resource type="Script" path="res://scripts/cards/effects/spill_oil_effect.gd" id="4_f14v8"]
+[ext_resource type="Resource" path="res://data/status/oil_slow.tres" id="5_bmbuo"]
+[ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="6_ipmpt"]
+[ext_resource type="Script" path="res://scripts/cards/targeting/area_targeting.gd" id="7_m8mwc"]
 
-[sub_resource type="Resource" id="Resource_sk2xb"]
-script = ExtResource("2_j8b56")
+[sub_resource type="Resource" id="Resource_6gp5d"]
+script = ExtResource("3_qwoqt")
 damage_per_second = 2.5
 duration = 7.0
 
+[sub_resource type="Resource" id="Resource_2pdvr"]
+script = ExtResource("4_f14v8")
+slow = ExtResource("5_bmbuo")
+blaze = SubResource("Resource_6gp5d")
+
+[sub_resource type="Resource" id="Resource_v3uk5"]
+script = ExtResource("7_m8mwc")
+radius = 55.0
+color = Color(0.62, 0.45, 0.9, 1)
+on_road = true
+
 [resource]
-script = ExtResource("1_card")
-slow = ExtResource("4_1wxih")
-blaze = SubResource("Resource_sk2xb")
+script = ExtResource("6_ipmpt")
+id = &"oil_slick"
 title = "Oil Slick"
-art = ExtResource("2_art")
+art = ExtResource("1_4i6qn")
 cost = 1
+targeting = SubResource("Resource_v3uk5")
+effects = Array[ExtResource("2_51fy5")]([SubResource("Resource_2pdvr")])

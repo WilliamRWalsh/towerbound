@@ -59,12 +59,9 @@ func road_point(global_pos: Vector2, max_distance: float) -> Vector2:
 	return path.to_global(point)
 
 
-## Clears every targeting preview a card may have turned on.
-func clear_targeting() -> void:
-	placement.clear()
-	overlay.hide_circle()
-	barricades.end_preview()
-	castle.highlighted = false
+## Canvas position of the road `offset` map pixels from the Badlands gate.
+func road_point_at(offset: float) -> Vector2:
+	return path.to_global(path.curve.sample_baked(offset))
 
 
 func _fit_to_viewport() -> void:

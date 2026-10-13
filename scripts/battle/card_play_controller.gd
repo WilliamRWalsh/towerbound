@@ -31,7 +31,8 @@ var _active_card: Card = null:
 		_active_card = card
 		if was_aiming != (card != null):
 			aiming_changed.emit(card != null)
-var _choice_pos := Vector2.ZERO
+## Where the selected card waits to be played while the chooser is open.
+var _choice_target: CardTarget
 var _discarding := false
 var _discards_left := DISCARDS_PER_WAVE
 
@@ -180,7 +181,7 @@ func _select(card: Card) -> void:
 	chooser.close()
 	if _active_card:
 		_active_card.selected = false
-	field.clear_targeting()
+		_active_card.data.end_targeting(field)
 	_active_card = card
 	card.selected = true
 	card.data.begin_targeting(field)
@@ -192,8 +193,8 @@ func _cancel() -> void:
 	chooser.close()
 	if _active_card:
 		_active_card.selected = false
+		_active_card.data.end_targeting(field)
 	_active_card = null
-	field.clear_targeting()
 	hand.layout()
 
 
@@ -204,14 +205,16 @@ func _cancel() -> void:
 func _try_play(card: Card, global_pos: Vector2) -> bool:
 	if not battle.can_play_cards() or hand.is_over_hand(global_pos) or not _has_mana(card.data.cost):
 		return false
-	var options := card.data.choices_at(field, global_pos)
+	var target := card.data.target_at(field, global_pos)
+	if target == null:
+		return false
+	var options := card.data.choices(field, target)
 	if not options.is_empty():
-		var grid := field.grid
-		_choice_pos = global_pos
-		chooser.open(grid.to_global(grid.cell_center(grid.world_to_cell(global_pos))), options)
+		_choice_target = target
+		chooser.open(target.position, options)
 		hand.layout()
 		return true
-	if not card.data.play(field, global_pos):
+	if not card.data.play(field, target):
 		return false
 	_finish_play(card)
 	return true
@@ -222,7 +225,7 @@ func _on_choice(index: int) -> void:
 	var card := _active_card
 	chooser.close()
 	if card == null or not battle.can_play_cards() or not _has_mana(card.data.cost) \
-			or not card.data.play_choice(field, _choice_pos, index):
+			or not card.data.play(field, _choice_target, index):
 		_cancel()
 		return
 	_finish_play(card)
@@ -231,7 +234,7 @@ func _on_choice(index: int) -> void:
 ## The card was played: it leaves the hand for the discard pile and its mana is spent.
 func _finish_play(card: Card) -> void:
 	_active_card = null
-	field.clear_targeting()
+	card.data.end_targeting(field)
 	hand.remove_card(card)
 	battle.deck.discard(card.data)
 	battle.mana.spend(card.data.cost)
@@ -257,7 +260,7 @@ func _discard(card: Card) -> void:
 	_set_discarding(false)
 	hand.discard_card(card)
 	battle.deck.discard(card.data)
-	card.data.on_discard(field)
+	card.data.discard(field)
 
 
 ## "Cancel" while armed; greyed out once this wave's discard is used or the battle is over.

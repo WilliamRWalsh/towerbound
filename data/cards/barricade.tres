@@ -1,11 +1,26 @@
-[gd_resource type="Resource" script_class="BarricadeCardData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" path="res://scripts/cards/barricade_card_data.gd" id="1_card"]
-[ext_resource type="Texture2D" path="res://assets/cards/barricade.png" id="2_art"]
+[ext_resource type="Texture2D" path="res://assets/cards/barricade.png" id="1_pa4gx"]
+[ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_jdh8c"]
+[ext_resource type="Script" path="res://scripts/cards/effects/scatter_caltrops_effect.gd" id="3_2rq10"]
+[ext_resource type="Script" path="res://scripts/cards/effects/place_barricade_effect.gd" id="4_tydrj"]
+[ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="5_nvxrt"]
+[ext_resource type="Script" path="res://scripts/cards/targeting/road_targeting.gd" id="6_gv3it"]
+
+[sub_resource type="Resource" id="Resource_prhva"]
+script = ExtResource("3_2rq10")
+
+[sub_resource type="Resource" id="Resource_g5ih0"]
+script = ExtResource("4_tydrj")
+
+[sub_resource type="Resource" id="Resource_71ua7"]
+script = ExtResource("6_gv3it")
 
 [resource]
-script = ExtResource("1_card")
-health = 5.0
+script = ExtResource("5_nvxrt")
+id = &"barricade"
 title = "Barricade"
-art = ExtResource("2_art")
-cost = 2
+art = ExtResource("1_pa4gx")
+targeting = SubResource("Resource_71ua7")
+effects = Array[ExtResource("2_jdh8c")]([SubResource("Resource_g5ih0")])
+discard_effects = Array[ExtResource("2_jdh8c")]([SubResource("Resource_prhva")])

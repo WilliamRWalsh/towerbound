@@ -1,11 +1,24 @@
-[gd_resource type="Resource" script_class="ChillCardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" path="res://scripts/cards/chill_card_data.gd" id="1_card"]
-[ext_resource type="Texture2D" path="res://assets/cards/chill.png" id="2_art"]
-[ext_resource type="Resource" path="res://data/status/chill.tres" id="2_klt6n"]
+[ext_resource type="Texture2D" path="res://assets/cards/chill.png" id="1_rjog2"]
+[ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_ufel2"]
+[ext_resource type="Resource" path="res://data/status/chill.tres" id="3_5d7cc"]
+[ext_resource type="Script" path="res://scripts/cards/effects/frost_burst_effect.gd" id="4_0itkx"]
+[ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="5_iq0av"]
+[ext_resource type="Script" path="res://scripts/cards/targeting/area_targeting.gd" id="6_hqjmi"]
+
+[sub_resource type="Resource" id="Resource_xvwa2"]
+script = ExtResource("4_0itkx")
+chill = ExtResource("3_5d7cc")
+
+[sub_resource type="Resource" id="Resource_8jxgi"]
+script = ExtResource("6_hqjmi")
+color = Color(0.55, 0.85, 1, 1)
 
 [resource]
-script = ExtResource("1_card")
-chill = ExtResource("2_klt6n")
+script = ExtResource("5_iq0av")
+id = &"chill"
 title = "Chill"
-art = ExtResource("2_art")
+art = ExtResource("1_rjog2")
+targeting = SubResource("Resource_8jxgi")
+effects = Array[ExtResource("2_ufel2")]([SubResource("Resource_xvwa2")])

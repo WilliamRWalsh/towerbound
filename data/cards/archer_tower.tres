@@ -1,14 +1,25 @@
-[gd_resource type="Resource" script_class="TowerCardData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" path="res://scripts/cards/tower_card_data.gd" id="1_card"]
-[ext_resource type="Texture2D" path="res://assets/cards/archer_tower.png" id="2_art"]
-[ext_resource type="PackedScene" path="res://scenes/towers/archer_tower.tscn" id="3_tower"]
-[ext_resource type="Resource" path="res://data/towers/archer_tower.tres" id="4_stats"]
+[ext_resource type="Texture2D" path="res://assets/cards/archer_tower.png" id="1_pnm5k"]
+[ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_142xj"]
+[ext_resource type="Script" path="res://scripts/cards/effects/place_tower_effect.gd" id="3_cgchy"]
+[ext_resource type="PackedScene" path="res://scenes/towers/archer_tower.tscn" id="4_sjulj"]
+[ext_resource type="Resource" path="res://data/towers/archer_tower.tres" id="5_18c2s"]
+[ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="6_xmcmk"]
+[ext_resource type="Script" path="res://scripts/cards/targeting/cell_targeting.gd" id="7_c4ptm"]
+
+[sub_resource type="Resource" id="Resource_bndym"]
+script = ExtResource("3_cgchy")
+tower_scene = ExtResource("4_sjulj")
+tower_stats = ExtResource("5_18c2s")
+
+[sub_resource type="Resource" id="Resource_bxtki"]
+script = ExtResource("7_c4ptm")
 
 [resource]
-script = ExtResource("1_card")
-tower_scene = ExtResource("3_tower")
-tower_stats = ExtResource("4_stats")
+script = ExtResource("6_xmcmk")
+id = &"archer_tower"
 title = "Archer Tower"
-art = ExtResource("2_art")
-cost = 2
+art = ExtResource("1_pnm5k")
+targeting = SubResource("Resource_bxtki")
+effects = Array[ExtResource("2_142xj")]([SubResource("Resource_bndym")])

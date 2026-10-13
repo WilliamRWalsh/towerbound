@@ -47,11 +47,17 @@ func place(global_pos: Vector2, health: float) -> bool:
 	var offset := snap(global_pos)
 	if offset == INVALID:
 		return false
+	place_at(offset, health)
+	return true
+
+
+## Places a barricade `offset` map pixels along the road, already checked with `snap`.
+func place_at(offset: float, health: float) -> Barricade:
 	var barricade := Barricade.new()
 	add_child(barricade)
 	barricade.place_on(path.curve, offset)
 	barricade.activate(health)
-	return true
+	return barricade
 
 
 func begin_preview() -> void:

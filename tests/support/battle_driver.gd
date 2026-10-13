@@ -13,7 +13,7 @@ const ARCHER := preload("res://data/cards/archer_tower.tres")
 const CANNON := preload("res://data/cards/cannon_tower.tres")
 const FIREBALL := preload("res://data/cards/fireball.tres")
 const UPGRADE := preload("res://data/cards/upgrade.tres")
-const REPAIR := preload("res://data/cards/heal.tres")
+const REPAIR := preload("res://data/cards/repair.tres")
 const BARRICADE := preload("res://data/cards/barricade.tres")
 const OIL := preload("res://data/cards/oil_slick.tres")
 const CHILL := preload("res://data/cards/chill.tres")
@@ -424,9 +424,9 @@ func _push_button(pos: Vector2, pressed: bool) -> void:
 
 ## Places a tower without a card or mana, as if a tower card had been played there.
 func place_tower(cell: Vector2i, card_data: CardData = ARCHER) -> Tower:
-	var data := card_data as TowerCardData
+	var place := card_data.find_effect(PlaceTowerEffect) as PlaceTowerEffect
 	var grid := field().grid
-	assert(grid.place_tower(cell, data.tower_scene, data.tower_stats), "cell %s not buildable" % cell)
+	assert(grid.place_tower(cell, place.tower_scene, place.tower_stats), "cell %s not buildable" % cell)
 	return grid.tower_at(cell)
 
 
@@ -520,7 +520,8 @@ func is_blocked(enemy: Enemy) -> bool:
 ## Places a barricade across the road at a distance along it, without a card.
 func place_barricade(progress: float) -> Barricade:
 	var layer := field().barricades
-	assert(layer.place(road_pos(progress), (BARRICADE as BarricadeCardData).health), "barricade spot invalid")
+	var health: float = (BARRICADE.find_effect(PlaceBarricadeEffect) as PlaceBarricadeEffect).health
+	assert(layer.place(road_pos(progress), health), "barricade spot invalid")
 	var newest: Barricade = null
 	for child in layer.get_children():
 		if child is Barricade and not child.preview:
