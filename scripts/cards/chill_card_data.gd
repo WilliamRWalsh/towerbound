@@ -25,5 +25,5 @@ func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool)
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:
-	FrostBurst.cast(field.effects, global_pos, damage, Units.px(radius), chill_duration)
+	FrostBurst.cast(field, global_pos, damage, Units.px(radius), chill_duration)
 	return true

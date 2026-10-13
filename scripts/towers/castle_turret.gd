@@ -4,15 +4,15 @@ extends Tower
 ## Tower, from the turret top, with its own (weaker) stats. Draws nothing: the map shows the turret.
 
 @export var turret_stats: TowerStats
-@export var projectile_layer: Node2D
+@export var world: Battlefield
 
 
 func _ready() -> void:
-	activate(turret_stats, projectile_layer)
+	activate(turret_stats, world)
 
 
 func _fire(target: Enemy) -> void:
-	Arrow.launch(_projectiles, global_position, target, stats.damage, stats.damage_type, stats.projectile_speed)
+	Arrow.launch(_world, global_position, target, stats.damage, stats.damage_type, stats.projectile_speed)
 
 
 func _draw() -> void:

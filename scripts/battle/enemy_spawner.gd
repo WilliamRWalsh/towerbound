@@ -6,7 +6,7 @@ extends Node
 signal enemy_spawned(enemy: Enemy)
 signal finished
 
-@export var path: Path2D
+@export var world: Battlefield
 ## Sideways jitter in map pixels so a group doesn't walk in single file.
 @export var spread := 20.0
 
@@ -45,9 +45,7 @@ func stop() -> void:
 
 func _spawn_next() -> void:
 	var scene: PackedScene = _queue.pop_front()[1]
-	var enemy: Enemy = scene.instantiate()
-	enemy.h_offset = randf_range(-spread, spread)
-	path.add_child(enemy)
+	var enemy := world.spawn_enemy(scene, randf_range(-spread, spread))
 	enemy_spawned.emit(enemy)
 	if _queue.is_empty():
 		done = true

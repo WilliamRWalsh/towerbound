@@ -6,7 +6,6 @@ extends Node2D
 ## adds to the same patch. Sits on the ground layer, under the enemies. Works in its parent's
 ## (map-pixel) coordinates.
 
-const GROUP := "caltrops"
 ## How far before the end of the road the patch lies, in map pixels: just ahead of the gate crowd.
 const FROM_END := 270.0
 ## Length of road the patch covers, in map pixels.
@@ -14,6 +13,7 @@ const SPAN := 60.0
 const FADE_TIME := 0.5
 
 var hits_left := 0
+var _world: Battlefield
 var _damage := 1.0
 var _path: Path2D
 ## Distance along the path of the patch's center.
@@ -26,17 +26,20 @@ var _fade := -1.0
 
 
 ## Scatters spikes that hurt the next `hits` enemies, or adds them to the patch already down.
-static func scatter(layer: Node2D, path: Path2D, hits: int, damage: float) -> Caltrops:
-	for existing: Caltrops in layer.get_tree().get_nodes_in_group(GROUP):
-		existing.hits_left += hits
-		existing._add_spikes(hits)
-		return existing
+static func scatter(world: Battlefield, hits: int, damage: float) -> Caltrops:
+	for existing in world.ground.get_children():
+		if existing is Caltrops and existing.hits_left > 0:
+			existing.hits_left += hits
+			existing._add_spikes(hits)
+			return existing
+	var layer := world.ground
+	var path := world.path
 	var caltrops := Caltrops.new()
+	caltrops._world = world
 	caltrops._path = path
 	caltrops._damage = damage
 	caltrops.hits_left = hits
 	caltrops._progress = path.curve.get_baked_length() - FROM_END
-	caltrops.add_to_group(GROUP)
 	layer.add_child(caltrops)
 	caltrops.global_position = path.to_global(path.curve.sample_baked(caltrops._progress))
 	caltrops._add_spikes(hits)
@@ -52,15 +55,14 @@ func _process(delta: float) -> void:
 		return
 	var start := _progress - SPAN * 0.5
 	var end := _progress + SPAN * 0.5
-	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
+	for enemy in _world.enemies.on_road_between(start, end):
 		if hits_left <= 0:
 			break
-		if enemy.is_alive() and not _hurt.has(enemy) and enemy.progress >= start and enemy.progress <= end:
+		if not _hurt.has(enemy):
 			_hurt[enemy] = true
 			hits_left -= 1
 			enemy.take_damage(_damage, Damage.Type.PIERCE)
 	if hits_left <= 0:
-		remove_from_group(GROUP)
 		_fade = 0.0
 
 

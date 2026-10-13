@@ -107,58 +107,62 @@ func hand() -> Hand:
 	return main.get_node("HandLayer/Hand")
 
 
+func battle() -> Battle:
+	return main.get_node("Battle")
+
+
 func castle() -> Castle:
 	return field().castle
 
 
 func mana() -> float:
-	return main._mana
+	return battle().mana.value
 
 
 func set_mana(value: float) -> void:
-	main._mana = value
+	battle().mana.value = value
 
 
 func max_mana() -> float:
-	return main.level.max_mana
+	return battle().mana.max_value
 
 
 func wave_number() -> int:
-	return main._waves.wave_number
+	return battle().wave_number
 
 
 func wave_count() -> int:
-	return main._waves.wave_count()
+	return battle().wave_count()
 
 
 ## "none", "victory", or "defeat".
 func result() -> String:
-	match main._result:
-		1:
+	match battle().state:
+		Battle.State.VICTORY:
 			return "victory"
-		2:
+		Battle.State.DEFEAT:
 			return "defeat"
 	return "none"
 
 
 func is_preparing() -> bool:
-	return result() == "none" and main._waves.phase == WaveRunner.Phase.PREPARING
+	return battle().state == Battle.State.PREPARING
 
 
 func is_fighting() -> bool:
-	return result() == "none" and main._waves.phase == WaveRunner.Phase.COMBAT
+	return battle().state == Battle.State.COMBAT
 
 
 func prepare_time_left() -> float:
-	return main._waves.prepare_time_left()
+	return battle().prepare_time_left()
 
 
 func draw_pile_count() -> int:
-	return main._deck.draw_count()
+	return battle().deck.draw_count()
 
 
 func discard_pile_count() -> int:
-	return main._deck.discard_count()
+	return battle().deck.discard_count()
 
 
 func hand_cards() -> Array[Card]:
@@ -215,35 +219,31 @@ func tower_at(cell: Vector2i) -> Tower:
 
 ## Every enemy still in play (walking, striking, or downed and waiting to rise).
 func enemies() -> Array[Enemy]:
-	var list: Array[Enemy] = []
-	for node in main.get_tree().get_nodes_in_group(Enemy.GROUP):
-		if node is Enemy and main.is_ancestor_of(node):
-			list.append(node)
-	return list
+	return field().enemies.in_play()
 
 
 func living_enemies() -> Array[Enemy]:
-	return enemies().filter(func(e: Enemy) -> bool: return e.is_alive())
+	return field().enemies.living()
 
 
 func spawns_pending() -> bool:
-	return not field().get_node("Spawner").done
+	return not field().spawner.done
 
 
 func ledger_is_empty() -> bool:
-	return TargetPlanner._incoming.is_empty()
+	return field().ledger.is_empty()
 
 
 func on_enemy_spawned(callback: Callable) -> void:
-	main._waves.enemy_spawned.connect(callback)
+	battle().enemy_spawned.connect(callback)
 
 
 func on_wave_cleared(callback: Callable) -> void:
-	main._waves.wave_cleared.connect(callback)
+	battle().wave_cleared.connect(callback)
 
 
 func on_preparation_started(callback: Callable) -> void:
-	main._waves.preparation_started.connect(callback)
+	battle().preparation_started.connect(callback)
 
 
 # --- Positions (viewport canvas coordinates) ----------------------------------------------------
@@ -290,7 +290,7 @@ func cell_far_from_road(min_px := 260.0) -> Vector2i:
 
 
 func path() -> Path2D:
-	return field().get_node("BuildGrid/EnemyPath")
+	return field().path
 
 
 func road_length() -> float:
@@ -461,11 +461,9 @@ func silence_turrets() -> void:
 ## Puts an enemy on the road `progress` map pixels from the Badlands gate, wired into the battle
 ## like a spawned one (it counts toward the wave and pays mana when killed).
 func spawn(scene: PackedScene, progress: float, h_offset := 0.0) -> Enemy:
-	var enemy: Enemy = scene.instantiate()
-	enemy.h_offset = h_offset
-	path().add_child(enemy)
+	var enemy := field().spawn_enemy(scene, h_offset)
 	enemy.progress = progress
-	field().get_node("Spawner").enemy_spawned.emit(enemy)
+	field().spawner.enemy_spawned.emit(enemy)
 	return enemy
 
 
@@ -514,7 +512,7 @@ func place_barricade(progress: float) -> Barricade:
 
 ## Lights a patch of burning ground, as a Fireball leaves behind. `radius` is in map pixels.
 func ignite_ground(pos: Vector2, radius: float, dps: float, duration: float) -> void:
-	BurningGround.ignite(ground_layer(), pos, radius, dps, duration)
+	BurningGround.ignite(field(), pos, radius, dps, duration)
 
 
 ## Road distance of the point on the road nearest to a canvas position.

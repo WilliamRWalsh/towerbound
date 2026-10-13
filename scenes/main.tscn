@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/ui/hand.gd" id="3_hand"]
 [ext_resource type="Script" path="res://scripts/ui/mana_bar.gd" id="4_mana"]
 [ext_resource type="Script" path="res://scripts/ui/banner.gd" id="5_banner"]
-[ext_resource type="Script" path="res://scripts/battle/wave_runner.gd" id="6_waves"]
+[ext_resource type="Script" path="res://scripts/battle/battle.gd" id="6_battle"]
 [ext_resource type="Script" path="res://scripts/ui/wave_hud.gd" id="7_hud"]
 [ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="9_health"]
 [ext_resource type="Resource" path="res://data/levels/woodland.tres" id="8_level"]
@@ -17,9 +17,9 @@ level = ExtResource("8_level")
 
 [node name="Battlefield" parent="." instance=ExtResource("2_field")]
 
-[node name="WaveRunner" type="Node" parent="." node_paths=PackedStringArray("spawner")]
-script = ExtResource("6_waves")
-spawner = NodePath("../Battlefield/Spawner")
+[node name="Battle" type="Node" parent="." node_paths=PackedStringArray("field")]
+script = ExtResource("6_battle")
+field = NodePath("../Battlefield")
 
 [node name="HandLayer" type="CanvasLayer" parent="."]
 

@@ -22,4 +22,4 @@ func play(field: Battlefield, global_pos: Vector2) -> bool:
 
 
 func on_discard(field: Battlefield) -> void:
-	Caltrops.scatter(field.ground, field.barricades.path, caltrop_hits, caltrop_damage)
+	Caltrops.scatter(field, caltrop_hits, caltrop_damage)

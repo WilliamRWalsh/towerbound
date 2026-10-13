@@ -24,6 +24,5 @@ func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool)
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:
-	Fireball.cast(field.effects, global_pos, damage, Units.px(radius),
-		field.ground, burn_dps, burn_duration)
+	Fireball.cast(field, global_pos, damage, Units.px(radius), burn_dps, burn_duration)
 	return true

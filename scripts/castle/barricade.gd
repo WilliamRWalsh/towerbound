@@ -2,11 +2,10 @@ class_name Barricade
 extends Node2D
 ## A spiked wooden barricade across the road, in map pixels. Enemies that walk into it stop and
 ## strike it instead of the castle until it breaks; then they walk on. `progress` is where it
-## stands along the enemy path. Leaves the "barricades" group the moment it breaks.
+## stands along the enemy path. Stops counting as standing the moment it breaks.
 
 signal broken(barricade: Barricade)
 
-const GROUP := "barricades"
 ## Half the barricade's width across the road, in map pixels.
 const HALF_WIDTH := 72.0
 const STAKE_COUNT := 4
@@ -25,6 +24,7 @@ var max_health := 5.0
 var health := 5.0
 ## Ghost shown while the card is aimed; tinted green or red, never blocks.
 var preview := false
+var _standing := false
 var preview_valid := true:
 	set(value):
 		preview_valid = value
@@ -53,11 +53,11 @@ func place_on(curve: Curve2D, offset: float) -> void:
 func activate(starting_health: float) -> void:
 	max_health = starting_health
 	health = starting_health
-	add_to_group(GROUP)
+	_standing = true
 
 
 func is_standing() -> bool:
-	return is_in_group(GROUP)
+	return _standing
 
 
 func take_damage(amount: float) -> void:
@@ -67,7 +67,7 @@ func take_damage(amount: float) -> void:
 	_hit = true
 	_flash = 1.0
 	if health <= 0.001:
-		remove_from_group(GROUP)
+		_standing = false
 		broken.emit(self)
 		var tween := create_tween()
 		tween.tween_property(self, "_break", 1.0, BREAK_TIME).set_ease(Tween.EASE_OUT)

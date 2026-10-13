@@ -15,19 +15,16 @@ var _shards: Array = []
 
 
 ## Casts a frost burst at a canvas position. `radius` is in map pixels.
-static func cast(layer: Node2D, target_global: Vector2, damage: float, radius: float, chill_duration: float) -> FrostBurst:
+static func cast(world: Battlefield, target_global: Vector2, damage: float, radius: float, chill_duration: float) -> FrostBurst:
 	var burst := FrostBurst.new()
+	var layer := world.effects
 	burst._radius = radius
 	for i in 14:
 		burst._shards.append([Vector2.from_angle(TAU * i / 14.0 + randf_range(-0.15, 0.15)),
 			randf_range(10, 20), randf_range(0.7, 1.0)])
 	layer.add_child(burst)
 	burst.position = layer.to_local(target_global)
-	var hit: Array[Enemy] = []
-	for enemy: Enemy in layer.get_tree().get_nodes_in_group(Enemy.GROUP):
-		if enemy.is_alive() and layer.to_local(enemy.global_position).distance_to(burst.position) <= radius:
-			hit.append(enemy)
-	for enemy in hit:
+	for enemy in world.enemies.in_radius(burst.position, radius):
 		# Chill first so the hit flash shows the enemy already frosted.
 		enemy.apply_chill(chill_duration)
 		enemy.take_damage(damage, Damage.Type.FROST)

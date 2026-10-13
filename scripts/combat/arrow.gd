@@ -13,7 +13,9 @@ var _target: Enemy
 var _damage := 1.0
 var _damage_type := Damage.Type.PIERCE
 var _speed := 0.0
-## Damage reserved with TargetPlanner until this resolves; the enemy's instance id it is for.
+## Damage reserved with the battlefield's DamageLedger until this resolves; the enemy's instance
+## id it is for.
+var _ledger: DamageLedger
 var _committed := 0.0
 var _committed_to := 0
 var _aim := Vector2.ZERO
@@ -22,14 +24,16 @@ var _done := false
 
 
 ## Fires an arrow from a canvas position. `speed` is in reference units per second.
-static func launch(layer: Node2D, from_global: Vector2, target: Enemy, damage: float,
+static func launch(world: Battlefield, from_global: Vector2, target: Enemy, damage: float,
 		damage_type: Damage.Type, speed: float) -> Arrow:
 	var arrow := Arrow.new()
 	arrow._target = target
 	arrow._damage = damage
 	arrow._damage_type = damage_type
 	arrow._speed = Units.px(speed)
-	arrow._committed = TargetPlanner.commit(target, damage, damage_type)
+	var layer := world.effects
+	arrow._ledger = world.ledger
+	arrow._committed = world.ledger.commit(target, damage, damage_type)
 	arrow._committed_to = target.get_instance_id()
 	layer.add_child(arrow)
 	arrow.position = layer.to_local(from_global)
@@ -93,8 +97,8 @@ func _exit_tree() -> void:
 	_release()
 
 
-## Hands the reserved damage back to TargetPlanner, once.
+## Hands the reserved damage back to the ledger, once.
 func _release() -> void:
 	if _committed_to != 0:
-		TargetPlanner.release(_committed_to, _committed)
+		_ledger.release(_committed_to, _committed)
 		_committed_to = 0

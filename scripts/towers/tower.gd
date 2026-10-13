@@ -40,16 +40,16 @@ var _pips: Node2D
 var _pip_pop := -1.0
 var _reload_spin := 0.0
 
-var _projectiles: Node2D
+var _world: Battlefield
 var _cooldown := 0.0
 var _badge: Node2D
 var _burst := -1.0
 
 
-func activate(tower_stats: TowerStats, projectile_layer: Node2D) -> void:
+func activate(tower_stats: TowerStats, world: Battlefield) -> void:
 	stats = tower_stats
 	fire_interval = stats.fire_interval
-	_projectiles = projectile_layer
+	_world = world
 	max_charges = stats.charges
 	charges_left = max_charges
 	if stats.charges > 0:
@@ -160,7 +160,7 @@ func _process(delta: float) -> void:
 			if _pip_pop >= PIP_POP_TIME:
 				_pip_pop = -1.0
 		_pips.queue_redraw()
-	if _projectiles == null:
+	if _world == null:
 		return
 	_cooldown = maxf(0.0, _cooldown - delta)
 	if _cooldown > 0.0 or not can_fire():
@@ -178,8 +178,7 @@ func _process(delta: float) -> void:
 
 ## The living enemy in range furthest along the path that isn't already doomed, or null.
 func find_target() -> Enemy:
-	var reach := Units.px(stats.attack_range) * global_scale.x
-	return TargetPlanner.pick_target(get_tree(), global_position, reach)
+	return _world.targeting.pick_target(_world.to_local(global_position), Units.px(stats.attack_range))
 
 
 func _fire(_target: Enemy) -> void:

@@ -31,6 +31,6 @@ func play(field: Battlefield, global_pos: Vector2) -> bool:
 	var point := field.road_point(global_pos, SNAP_DISTANCE)
 	if point == Vector2.INF:
 		return false
-	OilSlick.spill(field.ground, point, Units.px(radius), slow, duration,
+	OilSlick.spill(field, point, Units.px(radius), slow, duration,
 		burn_dps, burn_duration)
 	return true

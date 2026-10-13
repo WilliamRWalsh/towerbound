@@ -24,23 +24,23 @@ centered = false
 [node name="Castle" type="Node2D" parent="."]
 script = ExtResource("7_castle")
 
-[node name="LeftTurret" type="Node2D" parent="Castle" node_paths=PackedStringArray("projectile_layer")]
+[node name="LeftTurret" type="Node2D" parent="Castle" node_paths=PackedStringArray("world")]
 position = Vector2(308, 1565)
 script = ExtResource("9_turret")
 turret_stats = ExtResource("10_turret_stats")
-projectile_layer = NodePath("../../Projectiles")
+world = NodePath("../..")
 
-[node name="RightTurret" type="Node2D" parent="Castle" node_paths=PackedStringArray("projectile_layer")]
+[node name="RightTurret" type="Node2D" parent="Castle" node_paths=PackedStringArray("world")]
 position = Vector2(638, 1565)
 script = ExtResource("9_turret")
 turret_stats = ExtResource("10_turret_stats")
-projectile_layer = NodePath("../../Projectiles")
+world = NodePath("../..")
 
-[node name="BuildGrid" type="Node2D" parent="." node_paths=PackedStringArray("projectile_layer")]
+[node name="BuildGrid" type="Node2D" parent="." node_paths=PackedStringArray("world")]
 y_sort_enabled = true
 script = ExtResource("3_grid")
 blocked_mask = ExtResource("4_blocked")
-projectile_layer = NodePath("../Projectiles")
+world = NodePath("..")
 
 [node name="Towers" type="Node2D" parent="BuildGrid"]
 y_sort_enabled = true
@@ -60,6 +60,6 @@ path = NodePath("../EnemyPath")
 visible = false
 script = ExtResource("8_overlay")
 
-[node name="Spawner" type="Node" parent="." node_paths=PackedStringArray("path")]
+[node name="Spawner" type="Node" parent="." node_paths=PackedStringArray("world")]
 script = ExtResource("6_spawner")
-path = NodePath("../BuildGrid/EnemyPath")
+world = NodePath("..")

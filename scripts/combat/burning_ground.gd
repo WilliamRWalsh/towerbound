@@ -6,13 +6,13 @@ extends Node2D
 ## the ground layer, under the enemies. Works in its parent's (map-pixel) coordinates.
 ## TargetPlanner reads its upcoming ticks to predict burn kills.
 
-const GROUP := "burning_ground"
 const TICK := 0.5
 const FADE_TIME := 0.6
 const FLAME := Color(1.0, 0.55, 0.12)
 const EMBER := Color(0.85, 0.2, 0.05)
 const CORE := Color(1.0, 0.9, 0.55)
 
+var _world: Battlefield
 var _radius := 90.0
 var _damage_per_second := 1.0
 var _duration := 4.0
@@ -23,15 +23,16 @@ var _flames: Array = []
 
 
 ## Lights a patch at a canvas position. `radius` is in map pixels.
-static func ignite(layer: Node2D, target_global: Vector2, radius: float, damage_per_second: float, duration: float) -> BurningGround:
+static func ignite(world: Battlefield, target_global: Vector2, radius: float, damage_per_second: float, duration: float) -> BurningGround:
 	var ground := BurningGround.new()
+	var layer := world.ground
+	ground._world = world
 	ground._radius = radius
 	ground._damage_per_second = damage_per_second
 	ground._duration = duration
 	for i in 14:
 		var spot := Vector2.from_angle(randf() * TAU) * sqrt(randf()) * radius * 0.8
 		ground._flames.append([spot, randf() * TAU, randf_range(0.7, 1.2)])
-	ground.add_to_group(GROUP)
 	layer.add_child(ground)
 	ground.position = layer.to_local(target_global)
 	return ground
@@ -68,15 +69,11 @@ func contains(point_global: Vector2) -> bool:
 	return parent.to_local(point_global).distance_to(position) <= _radius
 
 
-## Enemies leave the group when the battle ends, so a patch can't hurt anything after a result.
+## Enemies are halted when the battle ends, so a patch can't hurt anything after a result.
 func _burn(amount: float) -> void:
-	var hit: Array[Enemy] = []
-	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
-		if enemy.is_alive() and contains(enemy.global_position):
-			hit.append(enemy)
-	for enemy in hit:
+	for enemy in _world.enemies.in_radius(position, _radius):
 		enemy.take_damage(amount, Damage.Type.FIRE)
-	OilSlick.ignite_within(get_tree(), global_position, _radius * global_scale.x)
+	OilSlick.ignite_within(_world, position, _radius)
 
 
 func _draw() -> void:

@@ -1,7 +1,8 @@
 extends Node
 ## Battle screen coordinator for one level: the battlefield, the hand drawn from the level's deck,
-## mana, and the result. Owns mana, the deck, and card play; the WaveRunner owns the wave phases
-## and the Castle owns castle health. Cards, hand, grid, and HUD only report input and display.
+## and card play. The Battle owns the rules and state (waves, mana, deck, result) and the Castle
+## owns castle health; this screen turns player input into card plays and keeps the HUD in step.
+## Cards, hand, grid, and HUD only report input and display.
 
 const CARD_SCENE := preload("res://scenes/card.tscn")
 ## Tallest the health and mana bars get; they shrink on shorter screens to fit.
@@ -12,12 +13,10 @@ const DISCARD_BUTTON_SIZE := Vector2(140, 54)
 ## Discards allowed per wave, refilled at the start of each preparation phase.
 const DISCARDS_PER_WAVE := 1
 
-enum Result { NONE, VICTORY, DEFEAT }
-
 @export var level: LevelConfig
 
 @onready var _field: Battlefield = $Battlefield
-@onready var _waves: WaveRunner = $WaveRunner
+@onready var _battle: Battle = $Battle
 @onready var _hand: Hand = $HandLayer/Hand
 @onready var _mana_bar: ManaBar = $HandLayer/ManaBar
 @onready var _health_bar: HealthBar = $HandLayer/HealthBar
@@ -25,8 +24,6 @@ enum Result { NONE, VICTORY, DEFEAT }
 @onready var _preview: WavePreview = $HandLayer/WavePreview
 @onready var _banner: Banner = $MessageLayer/Banner
 
-var _deck: Deck
-var _result := Result.NONE
 var _active_card: Card = null
 var _restart_button: Button
 ## Bottom-left, above the hand. Pressing it arms discard mode: the next card tapped is thrown
@@ -39,25 +36,16 @@ var _discards_left := DISCARDS_PER_WAVE
 var _chooser: UpgradeChooser
 var _choice_pos := Vector2.ZERO
 
-## Fractional, since kills grant tenths of a mana.
-var _mana := 0.0:
-	set(value):
-		_mana = snappedf(clampf(value, 0.0, level.max_mana), 0.01)
-		_mana_bar.value = _mana
-		for card in _hand.get_cards():
-			card.affordable = _has_mana(card.data.cost)
 
 
 func _ready() -> void:
-	_deck = Deck.new(level.deck)
-	_mana_bar.max_value = int(level.max_mana)
-	_mana = level.starting_mana
-	_mana_bar.reset(_mana)
 	var castle := _field.castle
 	castle.health_changed.connect(func(health: float, max_health: int) -> void: _health_bar.set_health(health, max_health))
-	castle.destroyed.connect(_on_castle_destroyed)
-	castle.reset(level.castle_health)
+	_battle.setup(level)
 	_health_bar.set_health(castle.health, castle.max_health, false)
+	_mana_bar.max_value = int(level.max_mana)
+	_mana_bar.reset(_battle.mana.value)
+	_battle.mana.changed.connect(_on_mana_changed)
 	_add_restart_button()
 	_add_discard_button()
 	_chooser = UpgradeChooser.new()
@@ -65,32 +53,37 @@ func _ready() -> void:
 	$HandLayer.add_child(_chooser)
 	get_viewport().size_changed.connect(_fit_hud_to_safe_area)
 	_fit_hud_to_safe_area()
-	_waves.preparation_started.connect(_on_preparation_started)
-	_waves.combat_started.connect(_on_combat_started)
-	_waves.wave_cleared.connect(_on_wave_cleared)
-	_waves.level_cleared.connect(_on_level_cleared)
-	_waves.enemy_spawned.connect(_on_enemy_spawned)
-	_waves.start(level)
+	_battle.preparation_started.connect(_on_preparation_started)
+	_battle.combat_started.connect(_on_combat_started)
+	_battle.wave_cleared.connect(_on_wave_cleared)
+	_battle.ended.connect(_on_battle_ended)
+	_battle.kill_rewarded.connect(_on_kill_rewarded)
+	_battle.start()
 
 
 func _process(_delta: float) -> void:
 	_update_discard_button()
 	_preview.dimmed = _active_card != null
-	match _result:
-		Result.VICTORY:
+	match _battle.state:
+		Battle.State.VICTORY:
 			_hud.set_status("Victory")
-		Result.DEFEAT:
+		Battle.State.DEFEAT:
 			_hud.set_status("Defeat")
+		Battle.State.PREPARING:
+			_hud.set_status("Battle in %d" % ceili(_battle.prepare_time_left()))
 		_:
-			if _waves.phase == WaveRunner.Phase.PREPARING:
-				_hud.set_status("Battle in %d" % ceili(_waves.prepare_time_left()))
-			else:
-				_hud.set_status("Fighting")
+			_hud.set_status("Fighting")
+
+
+func _on_mana_changed(value: float) -> void:
+	_mana_bar.value = value
+	for card in _hand.get_cards():
+		card.affordable = _has_mana(card.data.cost)
 
 
 func _on_preparation_started(number: int, wave: WaveConfig) -> void:
-	_hud.set_wave(number, _waves.wave_count())
-	var final := number == _waves.wave_count()
+	_hud.set_wave(number, _battle.wave_count())
+	var final := number == _battle.wave_count()
 	_banner.show_message(wave.announcement_for(number), Banner.Style.DANGER if final else Banner.Style.NOTICE)
 	_banner.show_message("Prepare for Battle")
 	_preview.show_wave(wave)
@@ -109,36 +102,24 @@ func _on_wave_cleared(number: int) -> void:
 	_banner.show_message("Wave %d Defeated" % number, Banner.Style.VICTORY)
 
 
-func _on_level_cleared() -> void:
-	_end_battle(Result.VICTORY)
-	_banner.show_message("Victory!", Banner.Style.VICTORY)
-
-
-## Defeat takes precedence: it ends the battle at once, even mid-wave.
-func _on_castle_destroyed() -> void:
-	_end_battle(Result.DEFEAT)
-	_banner.clear()
-	_banner.show_message("Defeat", Banner.Style.DANGER)
-	_banner.show_message("The Castle Has Fallen", Banner.Style.DANGER)
-
-
-## Stops spawning, timers, enemies, and card play. Restart starts a fresh run.
-func _end_battle(result: Result) -> void:
-	if _result != Result.NONE:
-		return
-	_result = result
-	_waves.stop()
+## The Battle has already stopped spawning, timers, and enemies; this stops card play and shows
+## the result. Restart starts a fresh run.
+func _on_battle_ended(result: Battle.State) -> void:
 	_preview.hide_wave()
-	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
-		enemy.halt()
 	_cancel_placement()
 	_set_discarding(false)
+	if result == Battle.State.VICTORY:
+		_banner.show_message("Victory!", Banner.Style.VICTORY)
+	else:
+		_banner.clear()
+		_banner.show_message("Defeat", Banner.Style.DANGER)
+		_banner.show_message("The Castle Has Fallen", Banner.Style.DANGER)
 
 
 ## Draws until the hand is full; unplayed cards stay. Stops quietly if the deck runs dry.
 func _refill_hand() -> void:
 	while _hand.get_cards().size() < level.hand_size:
-		var data := _deck.draw()
+		var data := _battle.deck.draw()
 		if data == null:
 			return
 		var card: Card = CARD_SCENE.instantiate()
@@ -152,25 +133,9 @@ func _refill_hand() -> void:
 		card.discard_target = _discarding
 
 
-func _on_enemy_spawned(enemy: Enemy) -> void:
-	enemy.died.connect(_on_enemy_died)
-	enemy.attacked_castle.connect(_on_enemy_attacked_castle)
-
-
-## Enemies emit `died` exactly once, so each kill pays out once. The mana is granted now;
-## the wisp only animates it into the bar.
-func _on_enemy_died(enemy: Enemy) -> void:
-	if _result != Result.NONE:
-		return
-	var granted := minf(enemy.stats.mana_reward, level.max_mana - _mana)
-	if granted > 0.0:
-		_mana_bar.send_wisp(enemy.aim_point(), granted)
-		_mana += granted
-
-
-func _on_enemy_attacked_castle(_enemy: Enemy, damage: float) -> void:
-	if _result == Result.NONE:
-		_field.castle.take_damage(damage)
+## The Battle grants the mana right after this; the wisp only animates it into the bar.
+func _on_kill_rewarded(enemy: Enemy, amount: float) -> void:
+	_mana_bar.send_wisp(enemy.aim_point(), amount)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -237,15 +202,14 @@ func _on_card_drag_released(card: Card, global_pos: Vector2) -> void:
 		_cancel_placement()
 
 
-## Tolerates float rounding left over from adding tenths.
 func _has_mana(cost: int) -> bool:
-	return cost <= _mana + 0.001
+	return _battle.mana.can_afford(cost)
 
 
 ## Rejects a card that can't be played right now with a shake: not enough mana (the mana bar
 ## flashes too), no valid target (e.g. Heal at full health), or the battle is over.
 func _can_select(card: Card) -> bool:
-	return _result == Result.NONE and _check_playable(card)
+	return _battle.can_play_cards() and _check_playable(card)
 
 
 ## True when the card could be played now; otherwise shakes it (and flashes the mana bar if
@@ -286,7 +250,7 @@ func _cancel_placement() -> void:
 ## there (Upgrade on a tower with both upgrades open) opens the chooser and returns true; it is
 ## played, or not, once the player picks.
 func _try_play(card: Card, global_pos: Vector2) -> bool:
-	if _result != Result.NONE or _hand.is_over_hand(global_pos) or not _has_mana(card.data.cost):
+	if not _battle.can_play_cards() or _hand.is_over_hand(global_pos) or not _has_mana(card.data.cost):
 		return false
 	var options := card.data.choices_at(_field, global_pos)
 	if not options.is_empty():
@@ -305,7 +269,7 @@ func _try_play(card: Card, global_pos: Vector2) -> bool:
 func _on_choice(index: int) -> void:
 	var card := _active_card
 	_chooser.close()
-	if card == null or _result != Result.NONE or not _has_mana(card.data.cost) \
+	if card == null or not _battle.can_play_cards() or not _has_mana(card.data.cost) \
 			or not card.data.play_choice(_field, _choice_pos, index):
 		_cancel_placement()
 		return
@@ -317,13 +281,13 @@ func _finish_play(card: Card) -> void:
 	_active_card = null
 	_field.clear_targeting()
 	_hand.remove_card(card)
-	_deck.discard(card.data)
-	_mana -= card.data.cost
+	_battle.deck.discard(card.data)
+	_battle.mana.spend(card.data.cost)
 
 
 ## Arms or disarms discard mode. Arming drops any selected card back into the hand.
 func _set_discarding(on: bool) -> void:
-	on = on and _result == Result.NONE and _discards_left > 0 and not _hand.get_cards().is_empty()
+	on = on and _battle.can_play_cards() and _discards_left > 0 and not _hand.get_cards().is_empty()
 	if on:
 		_cancel_placement()
 	_discarding = on
@@ -335,12 +299,12 @@ func _set_discarding(on: bool) -> void:
 ## Throws a card onto the discard pile without playing it. Costs no mana, but uses up the
 ## wave's discard. Some cards do something when thrown away (Barricade leaves caltrops).
 func _discard(card: Card) -> void:
-	if not _discarding or _discards_left <= 0 or _result != Result.NONE:
+	if not _discarding or _discards_left <= 0 or not _battle.can_play_cards():
 		return
 	_discards_left -= 1
 	_set_discarding(false)
 	_hand.discard_card(card)
-	_deck.discard(card.data)
+	_battle.deck.discard(card.data)
 	card.data.on_discard(_field)
 
 
@@ -359,7 +323,7 @@ func _add_discard_button() -> void:
 ## "Cancel" while armed; greyed out once this wave's discard is used or the battle is over.
 func _update_discard_button() -> void:
 	_discard_button.text = "Cancel" if _discarding else "Discard"
-	_discard_button.disabled = not _discarding and (_discards_left <= 0 or _result != Result.NONE)
+	_discard_button.disabled = not _discarding and (_discards_left <= 0 or not _battle.can_play_cards())
 
 
 ## Debug only: reloads the battle scene, which starts a completely fresh run.

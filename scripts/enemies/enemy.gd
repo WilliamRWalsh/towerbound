@@ -3,11 +3,11 @@ extends PathFollow2D
 ## An enemy walking the enemy path; its look comes from the EnemyBody child and its numbers from
 ## `stats`. Dies once at zero health. At the end of the path it stands at the castle gate and
 ## keeps striking it every `stats.attack_interval` until it is killed. A standing barricade in its
-## way stops it the same way until the barricade breaks. Leaves the "enemies" group
-## the moment it dies or the battle halts, so towers and projectiles ignore it from then on.
+## way stops it the same way until the barricade breaks. Drops out of play (`in_play`) the moment
+## it dies or the battle halts, so towers and projectiles ignore it from then on.
 ## Enemies with `stats.revives` (zombies) fall DOWNED instead of dying and get back up after
-## `stats.revive_delay`; only the final death emits `died`. A downed enemy stays in the group so
-## a battle halt still reaches it, but `is_alive` is false, so nothing can target or hurt it.
+## `stats.revive_delay`; only the final death emits `died`. A downed enemy stays in play so a
+## battle halt still reaches it, but `is_alive` is false, so nothing can target or hurt it.
 ## Damage is scaled by the type's multiplier in `stats`, and a killing fire hit keeps a reviving
 ## enemy down. Slows (Oil Slick) scale walking speed; chill (Chill card) slows walking and
 ## striking and makes the enemy brittle: it takes extra crush damage until it thaws.
@@ -17,7 +17,6 @@ signal attacked_castle(enemy: Enemy, damage: float)
 
 enum State { WALKING, ATTACKING, BLOCKED, DOWNED, DYING, HALTED }
 
-const GROUP := "enemies"
 ## Map pixels walked per radian of walk cycle.
 const STRIDE := 4.5
 ## Only turn around when moving at least this much sideways, so near-vertical stretches
@@ -45,6 +44,8 @@ const RESIST_FLASH := Color(0.55, 0.57, 0.6)
 
 var state := State.WALKING
 var health := 0.0
+## The battlefield it walks on; set when spawned.
+var world: Battlefield
 
 var _stop_ratio := 1.0
 var _barricade_gap := BARRICADE_REACH
@@ -66,7 +67,6 @@ var _chill_left := 0.0
 func _ready() -> void:
 	health = stats.max_health
 	_revives_left = stats.revives
-	add_to_group(GROUP)
 	var length := (get_parent() as Path2D).curve.get_baked_length()
 	_stop_ratio = 1.0 - randf_range(0.0, GATE_CROWD) / maxf(1.0, length)
 	_barricade_gap = BARRICADE_REACH + randf_range(0.0, BARRICADE_CROWD)
@@ -75,6 +75,11 @@ func _ready() -> void:
 ## True while it can still be targeted and hurt: walking or attacking the gate or a barricade.
 func is_alive() -> bool:
 	return state == State.WALKING or state == State.ATTACKING or state == State.BLOCKED
+
+
+## True until it dies for good or the battle halts it; a downed zombie is still in play.
+func in_play() -> bool:
+	return state != State.DYING and state != State.HALTED
 
 
 ## Canvas position projectiles aim for.
@@ -124,7 +129,6 @@ func halt() -> void:
 	if state == State.DYING:
 		return
 	state = State.HALTED
-	remove_from_group(GROUP)
 	_stop_swing()
 	if _revive:
 		# Stays on the ground for good.
@@ -193,7 +197,6 @@ func _tick_statuses(delta: float) -> void:
 
 func _die() -> void:
 	state = State.DYING
-	remove_from_group(GROUP)
 	_stop_swing()
 	died.emit(self)
 	var tween := create_tween()
@@ -241,7 +244,7 @@ func _get_up() -> void:
 ## stopping gap.
 func _barricade_ahead(start: float) -> Barricade:
 	var nearest: Barricade = null
-	for barricade: Barricade in get_tree().get_nodes_in_group(Barricade.GROUP):
+	for barricade in world.barricades.standing():
 		if barricade.progress <= start or progress + _barricade_gap < barricade.progress:
 			continue
 		if nearest == null or barricade.progress < nearest.progress:

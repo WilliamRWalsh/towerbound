@@ -27,10 +27,19 @@ func snap(global_pos: Vector2) -> float:
 		return INVALID
 	if offset < MIN_PROGRESS or offset > curve.get_baked_length() - END_CLEARANCE:
 		return INVALID
-	for barricade: Barricade in get_tree().get_nodes_in_group(Barricade.GROUP):
+	for barricade in standing():
 		if absf(barricade.progress - offset) < MIN_GAP:
 			return INVALID
 	return offset
+
+
+## Every barricade still standing on the road.
+func standing() -> Array[Barricade]:
+	var list: Array[Barricade] = []
+	for child in get_children():
+		if child is Barricade and child.is_standing():
+			list.append(child)
+	return list
 
 
 ## Places a barricade at the snapped point. Returns false, changing nothing, if invalid.

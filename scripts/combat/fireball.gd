@@ -16,7 +16,7 @@ const EMBER := Color(0.85, 0.2, 0.05)
 
 var _damage := 3.0
 var _radius := 90.0
-var _ground: Node2D
+var _world: Battlefield
 var _burn_dps := 1.0
 var _burn_duration := 4.0
 var _age := 0.0
@@ -25,14 +25,15 @@ var _landed := false
 var _sparks: Array = []
 
 
-## Casts a fireball at a canvas position. `radius` is in map pixels. The burning patch goes on
-## `ground_layer`, under the enemies.
-static func cast(layer: Node2D, target_global: Vector2, damage: float, radius: float,
-		ground_layer: Node2D, burn_dps: float, burn_duration: float) -> Fireball:
+## Casts a fireball at a canvas position. `radius` is in map pixels. The burning patch goes on the
+## ground layer, under the enemies.
+static func cast(world: Battlefield, target_global: Vector2, damage: float, radius: float,
+		burn_dps: float, burn_duration: float) -> Fireball:
 	var fireball := Fireball.new()
+	var layer := world.effects
+	fireball._world = world
 	fireball._damage = damage
 	fireball._radius = radius
-	fireball._ground = ground_layer
 	fireball._burn_dps = burn_dps
 	fireball._burn_duration = burn_duration
 	layer.add_child(fireball)
@@ -54,16 +55,11 @@ func _process(delta: float) -> void:
 
 func _explode() -> void:
 	_landed = true
-	var parent := get_parent() as Node2D
-	var hit: Array[Enemy] = []
-	for enemy: Enemy in get_tree().get_nodes_in_group(Enemy.GROUP):
-		if enemy.is_alive() and parent.to_local(enemy.global_position).distance_to(position) <= _radius:
-			hit.append(enemy)
-	for enemy in hit:
+	for enemy in _world.enemies.in_radius(position, _radius):
 		enemy.take_damage(_damage, Damage.Type.FIRE)
-	OilSlick.ignite_within(get_tree(), global_position, _radius * global_scale.x)
+	OilSlick.ignite_within(_world, position, _radius)
 	if _burn_duration > 0.0:
-		BurningGround.ignite(_ground, global_position, _radius, _burn_dps, _burn_duration)
+		BurningGround.ignite(_world, global_position, _radius, _burn_dps, _burn_duration)
 	for i in 18:
 		var dir := Vector2.from_angle(randf() * TAU)
 		_sparks.append([dir * randf_range(4, 20), dir * randf_range(220, 520) * Vector2(1.0, 0.65)])

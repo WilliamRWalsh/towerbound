@@ -19,8 +19,8 @@ const NO_CELL := Vector2i(-1, -1)
 @export var blocked_mask: Texture2D
 ## A cell is blocked when at least this fraction of its samples is masked.
 @export_range(0.0, 1.0) var blocked_threshold := 0.3
-## Layer that placed towers fire their arrows into.
-@export var projectile_layer: Node2D
+## The battlefield placed towers fight on.
+@export var world: Battlefield
 ## Manual corrections to the mask.
 @export var extra_blocked: Array[Vector2i] = []
 @export var extra_buildable: Array[Vector2i] = []
@@ -63,7 +63,7 @@ func place_tower(cell: Vector2i, tower_scene: PackedScene, stats: TowerStats) ->
 	var tower: Node2D = tower_scene.instantiate()
 	tower.position = cell_center(cell)
 	$Towers.add_child(tower)
-	tower.activate(stats, projectile_layer)
+	tower.activate(stats, world)
 	_states[cell] = CellState.OCCUPIED
 	_towers[cell] = tower
 	tower_placed.emit(cell)
