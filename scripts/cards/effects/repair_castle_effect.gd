@@ -11,3 +11,7 @@ func can_apply(world: Battlefield, _target: CardTarget) -> bool:
 
 func apply(world: Battlefield, _target: CardTarget, _choice: int) -> void:
 	world.castle.heal(amount)
+
+
+func describe(values: Dictionary) -> void:
+	values["amount"] = str(amount)

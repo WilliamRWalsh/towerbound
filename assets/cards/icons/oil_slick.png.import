@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dcc1aa1w58xk2"
-path="res://.godot/imported/chill.png-62315728f4727398ce8bb54023590a09.ctex"
+uid="uid://upg0wr2h3avc"
+path="res://.godot/imported/oil_slick.png-24206d088c904f28aee2a87465ccacbd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/chill.png"
-dest_files=["res://.godot/imported/chill.png-62315728f4727398ce8bb54023590a09.ctex"]
+source_file="res://assets/cards/icons/oil_slick.png"
+dest_files=["res://.godot/imported/oil_slick.png-24206d088c904f28aee2a87465ccacbd.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

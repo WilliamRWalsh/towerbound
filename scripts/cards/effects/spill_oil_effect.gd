@@ -12,3 +12,9 @@ extends CardEffect
 
 func apply(world: Battlefield, target: CardTarget, _choice: int) -> void:
 	OilSlick.spill(world, target.position, target.radius, slow, duration, blaze)
+
+
+func describe(values: Dictionary) -> void:
+	values["slow"] = percent(1.0 - slow.speed_multiplier)
+	values["oil_seconds"] = str(roundi(duration))
+	values["blaze_dps"] = decimal(blaze.damage_per_second)

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dwvseflnox8ud"
-path="res://.godot/imported/repair.png-e0100f6336782d88319191a0edcfefdd.ctex"
+uid="uid://boh1nfrpgpd6q"
+path="res://.godot/imported/archer_tower.png-50a01c3bb32b27b9a5631520bda31d81.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/repair.png"
-dest_files=["res://.godot/imported/repair.png-e0100f6336782d88319191a0edcfefdd.ctex"]
+source_file="res://assets/cards/icons/archer_tower.png"
+dest_files=["res://.godot/imported/archer_tower.png-50a01c3bb32b27b9a5631520bda31d81.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

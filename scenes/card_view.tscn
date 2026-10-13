@@ -1,8 +1,8 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/card.gd" id="1_card"]
+[ext_resource type="Script" path="res://scripts/ui/card_view.gd" id="1_card"]
 
-[node name="Card" type="Control"]
+[node name="CardView" type="Control"]
 texture_filter = 5
 layout_mode = 3
 anchors_preset = 0

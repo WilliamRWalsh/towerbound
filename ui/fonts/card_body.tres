@@ -1,0 +1,5 @@
+[gd_resource type="SystemFont" format=3]
+
+[resource]
+font_names = PackedStringArray("Palatino", "Palatino Linotype", "Book Antiqua", "Georgia", "serif")
+generate_mipmaps = true

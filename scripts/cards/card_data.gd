@@ -3,14 +3,24 @@ extends Resource
 ## A card: what it costs, how it is aimed (`targeting`), and what it does where it lands
 ## (`effects`), plus anything it does when thrown away with Discard (`discard_effects`). New cards
 ## are put together in the inspector from these parts; no card needs its own script.
+## The face is drawn from this data (CardFace): the painting and icon from assets/cards, and the
+## cost, title, description, and stats as text, with {placeholders} filled from the effects'
+## numbers, so the printed card always matches the tuning.
 ## CardPlayController owns the rules around a play: it checks mana before a card is selected or
 ## played, and only when `play` succeeds does it remove the card from the hand, discard it, and
 ## spend its cost.
 
 @export var id: StringName
 @export var title := ""
-@export var art: Texture2D
 @export var cost := 2
+## Picture in the frame's window (assets/cards/paintings) and the icon beside the description
+## (assets/cards/icons), from tools/export_card_faces.py.
+@export var painting: Texture2D
+@export var icon: Texture2D
+## Card text. {name} placeholders are filled from `text_values`.
+@export_multiline var description := ""
+## The three stat boxes along the bottom, each "value|LABEL", with the same placeholders.
+@export var stats: PackedStringArray = []
 @export var targeting: CardTargeting
 @export var effects: Array[CardEffect] = []
 ## Done once when the card is thrown away with Discard instead of played.
@@ -79,6 +89,16 @@ func damage_type() -> int:
 		if effect.damage_type() != Damage.NONE:
 			return effect.damage_type()
 	return Damage.NONE
+
+
+## The numbers the card's text can show, by placeholder name: `context` (battle values such as
+## {castle_max}), then the targeting's and every effect's own numbers.
+func text_values(context: Dictionary = {}) -> Dictionary:
+	var values := context.duplicate()
+	targeting.describe(values)
+	for effect in effects + discard_effects:
+		effect.describe(values)
+	return values
 
 
 ## The first effect that is an instance of `type` (a class), or null.

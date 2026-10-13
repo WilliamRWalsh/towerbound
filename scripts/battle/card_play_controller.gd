@@ -7,13 +7,13 @@ extends Node
 ## target spends nothing. The Battle decides whether cards can be played at all.
 
 ## The player tried a card that can't be played right now.
-signal card_rejected(card: Card, reason: Rejection)
+signal card_rejected(card: CardView, reason: Rejection)
 ## A card was selected for aiming (true) or put back (false).
 signal aiming_changed(aiming: bool)
 
 enum Rejection { NO_MANA, NO_TARGET }
 
-const CARD_SCENE := preload("res://scenes/card.tscn")
+const CARD_SCENE := preload("res://scenes/card_view.tscn")
 ## Discards allowed per wave, refilled at the start of each preparation phase.
 const DISCARDS_PER_WAVE := 1
 
@@ -25,7 +25,7 @@ const DISCARDS_PER_WAVE := 1
 ## Arms discard mode: the next card tapped is thrown away without being played.
 @export var discard_button: Button
 
-var _active_card: Card = null:
+var _active_card: CardView = null:
 	set(card):
 		var was_aiming := _active_card != null
 		_active_card = card
@@ -80,8 +80,9 @@ func _refill_hand() -> void:
 		var data := battle.deck.draw()
 		if data == null:
 			return
-		var card: Card = CARD_SCENE.instantiate()
+		var card: CardView = CARD_SCENE.instantiate()
 		card.data = data
+		card.text_context = {"castle_max": str(battle.level.castle_health)}
 		card.tapped.connect(_on_card_tapped)
 		card.drag_started.connect(_on_card_drag_started)
 		card.drag_moved.connect(_on_card_drag_moved)
@@ -121,7 +122,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## In discard mode a tapped card is discarded; otherwise it is raised for play, or shakes if it
 ## can't be played right now.
-func _on_card_tapped(card: Card) -> void:
+func _on_card_tapped(card: CardView) -> void:
 	if _discarding:
 		_discard(card)
 	elif _active_card == card:
@@ -130,7 +131,7 @@ func _on_card_tapped(card: Card) -> void:
 		_select(card)
 
 
-func _on_card_drag_started(card: Card) -> void:
+func _on_card_drag_started(card: CardView) -> void:
 	if _discarding:
 		return
 	if _can_select(card):
@@ -139,14 +140,14 @@ func _on_card_drag_started(card: Card) -> void:
 		_cancel()
 
 
-func _on_card_drag_moved(card: Card, global_pos: Vector2) -> void:
+func _on_card_drag_moved(card: CardView, global_pos: Vector2) -> void:
 	if card != _active_card:
 		return
 	hand.drag_card_to(card, global_pos)
 	card.data.update_targeting(field, global_pos, not hand.is_over_hand(global_pos))
 
 
-func _on_card_drag_released(card: Card, global_pos: Vector2) -> void:
+func _on_card_drag_released(card: CardView, global_pos: Vector2) -> void:
 	if card != _active_card:
 		hand.layout()
 		return
@@ -159,13 +160,13 @@ func _has_mana(cost: int) -> bool:
 	return battle.mana.can_afford(cost)
 
 
-func _can_select(card: Card) -> bool:
+func _can_select(card: CardView) -> bool:
 	return battle.can_play_cards() and _check_playable(card)
 
 
 ## True when the card could be played now. Otherwise shakes it and reports why: not enough mana,
 ## or no valid target (e.g. Repair at full health).
-func _check_playable(card: Card) -> bool:
+func _check_playable(card: CardView) -> bool:
 	if not _has_mana(card.data.cost):
 		hand.shake(card)
 		card_rejected.emit(card, Rejection.NO_MANA)
@@ -177,7 +178,7 @@ func _check_playable(card: Card) -> bool:
 	return true
 
 
-func _select(card: Card) -> void:
+func _select(card: CardView) -> void:
 	chooser.close()
 	if _active_card:
 		_active_card.selected = false
@@ -202,7 +203,7 @@ func _cancel() -> void:
 ## and its mana is spent, exactly once. On failure nothing changes. A card that needs a choice
 ## there (Upgrade on a tower with both upgrades open) opens the chooser and returns true; it is
 ## played, or not, once the player picks.
-func _try_play(card: Card, global_pos: Vector2) -> bool:
+func _try_play(card: CardView, global_pos: Vector2) -> bool:
 	if not battle.can_play_cards() or hand.is_over_hand(global_pos) or not _has_mana(card.data.cost):
 		return false
 	var target := card.data.target_at(field, global_pos)
@@ -232,7 +233,7 @@ func _on_choice(index: int) -> void:
 
 
 ## The card was played: it leaves the hand for the discard pile and its mana is spent.
-func _finish_play(card: Card) -> void:
+func _finish_play(card: CardView) -> void:
 	_active_card = null
 	card.data.end_targeting(field)
 	hand.remove_card(card)
@@ -253,7 +254,7 @@ func _set_discarding(on: bool) -> void:
 
 ## Throws a card onto the discard pile without playing it. Costs no mana, but uses up the
 ## wave's discard. Some cards do something when thrown away (Barricade leaves caltrops).
-func _discard(card: Card) -> void:
+func _discard(card: CardView) -> void:
 	if not _discarding or _discards_left <= 0 or not battle.can_play_cards():
 		return
 	_discards_left -= 1

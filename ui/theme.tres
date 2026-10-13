@@ -1,7 +1,9 @@
 [gd_resource type="Theme" format=3]
 
+[ext_resource type="SystemFont" path="res://ui/fonts/card_body.tres" id="1_iqtc0"]
 [ext_resource type="SystemFont" path="res://ui/fonts/sans_bold.tres" id="1_jf26r"]
 [ext_resource type="SystemFont" path="res://ui/fonts/serif_bold.tres" id="2_6lx7k"]
+[ext_resource type="SystemFont" path="res://ui/fonts/card_title.tres" id="2_7any1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iqtc0"]
 bg_color = Color(0.2, 0.13, 0.05, 0.94)
@@ -150,6 +152,8 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
 [resource]
+CardFace/fonts/body = ExtResource("1_iqtc0")
+CardFace/fonts/title = ExtResource("2_7any1")
 ChoiceButton/base_type = &"Button"
 ChoiceButton/colors/font_color = Color(1, 0.92, 0.66, 1)
 ChoiceButton/colors/font_hover_color = Color(1, 0.92, 0.66, 1)

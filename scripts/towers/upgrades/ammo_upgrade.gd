@@ -15,4 +15,8 @@ func apply(tower: Tower) -> void:
 
 
 func label() -> String:
-	return "Ammo\n+%d charge%s" % [extra_charges, "" if extra_charges == 1 else "s"]
+	return "Ammo\n%s charge%s" % [amount_text(), "" if extra_charges == 1 else "s"]
+
+
+func amount_text() -> String:
+	return "+%d" % extra_charges

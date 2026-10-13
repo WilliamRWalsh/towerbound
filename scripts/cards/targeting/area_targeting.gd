@@ -35,6 +35,10 @@ func resolve(world: Battlefield, _card: CardData, global_pos: Vector2) -> CardTa
 	return target
 
 
+func describe(values: Dictionary) -> void:
+	values["radius"] = CardEffect.decimal(Units.paces(radius))
+
+
 ## The canvas point a drop at `global_pos` lands on, or Vector2.INF where it can't go.
 func _point(world: Battlefield, global_pos: Vector2) -> Vector2:
 	return world.road_point(global_pos, SNAP_DISTANCE) if on_road else global_pos

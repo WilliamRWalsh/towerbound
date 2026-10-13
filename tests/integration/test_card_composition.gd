@@ -26,7 +26,10 @@ func _frost_trap() -> CardData:
 	var card := CardData.new()
 	card.id = &"frost_trap"
 	card.title = "Frost Trap"
-	card.art = Driver.CHILL.art
+	card.painting = Driver.CHILL.painting
+	card.icon = Driver.CHILL.icon
+	card.description = "Freezes a patch of road: {chill_slow} slow, then {slow} in the oil."
+	card.stats = PackedStringArray(["{chill_seconds}s|CHILL", "{radius}|RADIUS", "PATH|TARGET"])
 	card.cost = 2
 	card.targeting = area
 	var effects: Array[CardEffect] = [oil, frost]
@@ -50,3 +53,10 @@ func test_a_new_card_from_existing_parts() -> void:
 	assert_true(d.is_chilled(goblin))
 	assert_almost_eq(goblin.health, 2.5, 0.001)
 	assert_eq(trap.damage_type(), Damage.Type.FROST)
+
+
+func test_card_text_comes_from_the_numbers() -> void:
+	var trap := _frost_trap()
+	var face := CardFace.new(trap, SystemFont.new(), SystemFont.new())
+	assert_eq(" ".join(face.description_lines()), "Freezes a patch of road: 50% slow, then 40% in the oil.")
+	assert_eq(face.stat_texts(), PackedStringArray(["5s CHILL", "1.5 RADIUS", "PATH TARGET"]))

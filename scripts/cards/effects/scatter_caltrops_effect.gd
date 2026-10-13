@@ -13,3 +13,8 @@ func apply(world: Battlefield, _target: CardTarget, _choice: int) -> void:
 
 func damage_type() -> int:
 	return Damage.Type.PIERCE
+
+
+func describe(values: Dictionary) -> void:
+	values["caltrop_hits"] = str(hits)
+	values["caltrop_damage"] = decimal(damage)

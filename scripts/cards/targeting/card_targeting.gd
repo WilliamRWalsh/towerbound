@@ -30,3 +30,8 @@ func resolve(_world: Battlefield, _card: CardData, _global_pos: Vector2) -> Card
 ## the card is refused when picked up.
 func has_any_target(_world: Battlefield, _card: CardData) -> bool:
 	return true
+
+
+## Adds the targeting's numbers to the card's text values (see CardEffect.describe).
+func describe(_values: Dictionary) -> void:
+	pass

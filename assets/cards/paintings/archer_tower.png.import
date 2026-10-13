@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://csnaenka4k40v"
-path="res://.godot/imported/fireball.png-73b1c4d39e1a7ac91345f82df2f0b3d8.ctex"
+uid="uid://c7btqc1y6582b"
+path="res://.godot/imported/archer_tower.png-d1432be6c3cfd77cec0388b9437113d8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/fireball.png"
-dest_files=["res://.godot/imported/fireball.png-73b1c4d39e1a7ac91345f82df2f0b3d8.ctex"]
+source_file="res://assets/cards/paintings/archer_tower.png"
+dest_files=["res://.godot/imported/archer_tower.png-d1432be6c3cfd77cec0388b9437113d8.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

@@ -1,4 +1,4 @@
-"""One-off asset tool: builds assets/cards/archer_tower.png from sketches/archer.png.
+"""One-off asset tool: builds art/cards/archer_tower.png from sketches/archer.png.
 
 Crops the card onto a transparent background, repaints the mana gem with a new cost,
 and paints out the second archer and the background castle using Poisson (seamless) fills.
@@ -15,7 +15,7 @@ from scipy.sparse.linalg import spsolve
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "sketches/archer.png"
-OUTPUT = ROOT / "assets/cards/archer_tower.png"
+OUTPUT = ROOT / "art/cards/archer_tower.png"
 UI_DIR = ROOT / "assets/ui"
 GEM_RADIUS = 142  # outer radius of the gem's gold octagon, vertex pointing up
 FONT = ("/System/Library/Fonts/Avenir Next.ttc", 150, 0)  # Avenir Next Bold

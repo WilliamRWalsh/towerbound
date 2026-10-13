@@ -18,23 +18,23 @@ var bottom_inset := 0.0:
 		bottom_inset = value
 		layout()
 
-var _tweens: Dictionary[Card, Tween] = {}
+var _tweens: Dictionary[CardView, Tween] = {}
 
 
 func _ready() -> void:
 	resized.connect(layout)
 
 
-func get_cards() -> Array[Card]:
-	var cards: Array[Card] = []
+func get_cards() -> Array[CardView]:
+	var cards: Array[CardView] = []
 	for child in get_children():
-		if child is Card and not child.is_queued_for_deletion() and not child.leaving:
+		if child is CardView and not child.is_queued_for_deletion() and not child.leaving:
 			cards.append(child)
 	return cards
 
 
 ## Adds a card, sliding it up from below the screen like it's being drawn.
-func add_card(card: Card) -> void:
+func add_card(card: CardView) -> void:
 	card.size = CARD_SIZE
 	card.pivot_offset = Vector2(CARD_SIZE.x * 0.5, CARD_SIZE.y)
 	card.position = Vector2(size.x * 0.5 + SPACING * 2.0, size.y + 40.0)
@@ -43,14 +43,14 @@ func add_card(card: Card) -> void:
 	layout(true, DRAW_TIME)
 
 
-func remove_card(card: Card) -> void:
+func remove_card(card: CardView) -> void:
 	_tweens.erase(card)
 	card.queue_free()
 	layout()
 
 
 ## Discards a card: it lifts and fades away while the rest of the hand closes the gap.
-func discard_card(card: Card) -> void:
+func discard_card(card: CardView) -> void:
 	_kill_tween(card)
 	card.leaving = true
 	card.selected = false
@@ -64,7 +64,7 @@ func discard_card(card: Card) -> void:
 
 
 ## Where the card sits (in hand coordinates) once raised as the selected card.
-func raised_rect(card: Card) -> Rect2:
+func raised_rect(card: CardView) -> Rect2:
 	var cards := get_cards()
 	var spread := cards.find(card) - (cards.size() - 1) * 0.5
 	var bottom := size.y - RAISED_MARGIN - bottom_inset
@@ -79,7 +79,7 @@ func is_over_hand(global_pos: Vector2) -> bool:
 
 ## Moves a dragged card with the pointer. Over the battlefield the card hides so the tower
 ## preview takes its place.
-func drag_card_to(card: Card, global_pos: Vector2) -> void:
+func drag_card_to(card: CardView, global_pos: Vector2) -> void:
 	_kill_tween(card)
 	card.rotation = 0.0
 	card.scale = Vector2.ONE
@@ -89,7 +89,7 @@ func drag_card_to(card: Card, global_pos: Vector2) -> void:
 
 
 ## Wiggles a card that can't be played right now.
-func shake(card: Card) -> void:
+func shake(card: CardView) -> void:
 	var tween := create_tween()
 	var base := card.rotation
 	for angle in [0.08, -0.08, 0.05, -0.03]:
@@ -132,7 +132,7 @@ func layout(animate := true, time := TWEEN_TIME) -> void:
 			card.scale = target_scale
 
 
-func _kill_tween(card: Card) -> void:
+func _kill_tween(card: CardView) -> void:
 	if _tweens.has(card):
 		_tweens[card].kill()
 		_tweens.erase(card)

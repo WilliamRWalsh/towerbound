@@ -1,9 +1,10 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/cards/repair.png" id="1_7ibln"]
 [ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_h8gg8"]
+[ext_resource type="Texture2D" path="res://assets/cards/icons/repair.png" id="3_h8gg8"]
 [ext_resource type="Script" path="res://scripts/cards/effects/repair_castle_effect.gd" id="3_jexrn"]
 [ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="4_23jsq"]
+[ext_resource type="Texture2D" path="res://assets/cards/paintings/repair.png" id="4_jexrn"]
 [ext_resource type="Script" path="res://scripts/cards/targeting/castle_targeting.gd" id="5_80bwo"]
 
 [sub_resource type="Resource" id="Resource_41niy"]
@@ -16,6 +17,9 @@ script = ExtResource("5_80bwo")
 script = ExtResource("4_23jsq")
 id = &"repair"
 title = "Repair"
-art = ExtResource("1_7ibln")
+painting = ExtResource("4_jexrn")
+icon = ExtResource("3_h8gg8")
+description = "Repairs {amount} health of your castle, up to its full health."
+stats = PackedStringArray("+{amount}|HEALTH", "CASTLE|TARGET", "{castle_max}|MAX HEALTH")
 targeting = SubResource("Resource_7pr22")
 effects = Array[ExtResource("2_h8gg8")]([SubResource("Resource_41niy")])

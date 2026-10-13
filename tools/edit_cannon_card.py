@@ -1,4 +1,4 @@
-"""One-off asset tool: builds assets/cards/cannon_tower.png from sketches/archer.png, so the
+"""One-off asset tool: builds art/cards/cannon_tower.png from sketches/archer.png, so the
 Cannon Tower card shares the Archer Tower card's frame, painting, and stone tower.
 
 Runs the archer card's cleanup (cost, second archer, background castle), then paints out the
@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import edit_archer_card as archer
 
 ROOT = Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / "assets/cards/cannon_tower.png"
+OUTPUT = ROOT / "art/cards/cannon_tower.png"
 
 # Coordinates below are measured on the finished archer card; the sketch has a 23 × 24 px margin.
 OFFSET = np.array([23, 24])

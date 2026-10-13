@@ -24,3 +24,19 @@ func apply(_world: Battlefield, _target: CardTarget, _choice: int) -> void:
 ## The Damage.Type it deals, for the badge on the card, or Damage.NONE.
 func damage_type() -> int:
 	return Damage.NONE
+
+
+## Adds this effect's numbers to `values`, formatted for the card face, so the card's
+## description and stats ({damage}, {burn_seconds}, ...) always match the tuning.
+func describe(_values: Dictionary) -> void:
+	pass
+
+
+## "1.5": one decimal place, as cards print most numbers.
+static func decimal(value: float) -> String:
+	return "%.1f" % value
+
+
+## "40%" for 0.4.
+static func percent(fraction: float) -> String:
+	return "%d%%" % roundi(fraction * 100.0)

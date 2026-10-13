@@ -80,6 +80,6 @@ func _on_kill_rewarded(enemy: Enemy, amount: float) -> void:
 	_mana_bar.send_wisp(enemy.aim_point(), amount)
 
 
-func _on_card_rejected(_card: Card, reason: CardPlayController.Rejection) -> void:
+func _on_card_rejected(_card: CardView, reason: CardPlayController.Rejection) -> void:
 	if reason == CardPlayController.Rejection.NO_MANA:
 		_mana_bar.flash_insufficient()

@@ -169,7 +169,7 @@ func discard_pile_count() -> int:
 	return battle().deck.discard_count()
 
 
-func hand_cards() -> Array[Card]:
+func hand_cards() -> Array[CardView]:
 	return hand().get_cards()
 
 
@@ -182,7 +182,7 @@ func hand_titles() -> Array[String]:
 
 
 ## The first card in hand with this title, or null.
-func card(title: String) -> Card:
+func card(title: String) -> CardView:
 	for c in hand_cards():
 		if c.data.title == title:
 			return c
@@ -193,7 +193,7 @@ func card_play() -> CardPlayController:
 	return main.get_node("CardPlay")
 
 
-func selected_card() -> Card:
+func selected_card() -> CardView:
 	return card_play()._active_card
 
 
@@ -345,7 +345,7 @@ func hover(pos: Vector2) -> void:
 
 
 ## A point on the visible part of a card (tucked or raised).
-func card_point(c: Card) -> Vector2:
+func card_point(c: CardView) -> Vector2:
 	var rect := c.get_global_rect()
 	return Vector2(rect.get_center().x, rect.position.y + 50.0)
 

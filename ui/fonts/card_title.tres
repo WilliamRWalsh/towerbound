@@ -1,0 +1,10 @@
+[gd_resource type="FontVariation" load_steps=2 format=3]
+
+[sub_resource type="SystemFont" id="SystemFont_baskerville"]
+font_names = PackedStringArray("Baskerville", "Georgia", "Times New Roman", "serif")
+font_weight = 700
+generate_mipmaps = true
+
+[resource]
+base_font = SubResource("SystemFont_baskerville")
+variation_embolden = 0.7

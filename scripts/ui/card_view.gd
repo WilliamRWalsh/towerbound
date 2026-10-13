@@ -1,12 +1,13 @@
-class_name Card
+class_name CardView
 extends Control
-## A card in the hand, showing its CardData. Reports taps and drags; main.gd decides what they do
-## and the hand positions the card.
+## A card in the hand, drawing its CardData's face (CardFace) plus its state: a gold glow when
+## selected, a red outline as a discard target, dimmed when unaffordable, and a damage type badge.
+## Reports taps and drags; CardPlayController decides what they do and the Hand positions it.
 
-signal tapped(card: Card)
-signal drag_started(card: Card)
-signal drag_moved(card: Card, global_pos: Vector2)
-signal drag_released(card: Card, global_pos: Vector2)
+signal tapped(card: CardView)
+signal drag_started(card: CardView)
+signal drag_moved(card: CardView, global_pos: Vector2)
+signal drag_released(card: CardView, global_pos: Vector2)
 
 const DRAG_THRESHOLD := 14.0
 const BADGE_RADIUS := 15.0
@@ -14,6 +15,8 @@ const BADGE_RADIUS := 15.0
 const BADGE_INSET := 24.0
 
 @export var data: CardData
+## Battle values the card's text can show, such as {castle_max}; set before it enters the tree.
+var text_context: Dictionary = {}
 
 var selected := false:
 	set(value):
@@ -37,6 +40,7 @@ var leaving := false
 ## Where the pointer pressed the card, in card-local coordinates.
 var grab_offset := Vector2.ZERO
 
+var _face: CardFace
 var _pressing := false
 var _dragging := false
 var _press_pos := Vector2.ZERO
@@ -84,8 +88,15 @@ func _draw() -> void:
 		outline.shadow_color = Color(1.0, 0.2, 0.1, 0.5)
 		outline.shadow_size = 12
 		draw_style_box(outline, Rect2(Vector2.ZERO, size).grow(3))
-	draw_texture_rect(data.art, Rect2(Vector2.ZERO, size), false, Color.WHITE if affordable else Color(0.5, 0.5, 0.55))
+	face().draw(self, size, Color.WHITE if affordable else Color(0.5, 0.5, 0.55))
 	_draw_damage_badge()
+
+
+## The face as drawn, built on first draw.
+func face() -> CardFace:
+	if _face == null:
+		_face = CardFace.new(data, get_theme_font(&"title", &"CardFace"), get_theme_font(&"body", &"CardFace"), text_context)
+	return _face
 
 
 ## A small round badge in the top-right corner showing the damage type the card deals, so it can

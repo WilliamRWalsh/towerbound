@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://3hr1eokdv2o2"
-path="res://.godot/imported/cannon_tower.png-7d0a66d7727b8f592a68ceaa6957d632.ctex"
+uid="uid://c71w0m4f8tu4"
+path="res://.godot/imported/fireball.png-fe3690c542190e94f04fc76301597862.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/cannon_tower.png"
-dest_files=["res://.godot/imported/cannon_tower.png-7d0a66d7727b8f592a68ceaa6957d632.ctex"]
+source_file="res://assets/cards/paintings/fireball.png"
+dest_files=["res://.godot/imported/fireball.png-fe3690c542190e94f04fc76301597862.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

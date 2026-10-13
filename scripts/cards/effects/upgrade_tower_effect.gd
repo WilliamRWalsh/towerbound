@@ -25,6 +25,12 @@ func apply(_world: Battlefield, target: CardTarget, choice: int) -> void:
 	target.tower.upgrade(options[clampi(choice, 0, options.size() - 1)])
 
 
+## Each upgrade's amount under its id: {rate} → "+50%", {ammo} → "+1".
+func describe(values: Dictionary) -> void:
+	for option in upgrades:
+		values[String(option.id)] = option.amount_text()
+
+
 ## The upgrades `tower` can still take, in chooser order.
 func _options(tower: Tower) -> Array[TowerUpgrade]:
 	var options: Array[TowerUpgrade] = []

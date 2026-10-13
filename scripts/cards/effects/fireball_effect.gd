@@ -14,3 +14,9 @@ func apply(world: Battlefield, target: CardTarget, _choice: int) -> void:
 
 func damage_type() -> int:
 	return Damage.Type.FIRE
+
+
+func describe(values: Dictionary) -> void:
+	values["damage"] = decimal(damage)
+	values["burn_seconds"] = str(roundi(burn.duration))
+	values["burn_dps"] = decimal(burn.damage_per_second)

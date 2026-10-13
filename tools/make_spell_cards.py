@@ -954,7 +954,7 @@ def main():
         rgb = rewrite_text(rgb, spec, ICONS[name])
         rgb = draw_cost(rgb, spec["cost"])
         card = archer.cut_out_card(rgb)
-        output = ROOT / f"assets/cards/{name}.png"
+        output = ROOT / f"art/cards/{name}.png"
         card.save(output)
         print(f"Saved {output.relative_to(ROOT)} {card.size}")
 

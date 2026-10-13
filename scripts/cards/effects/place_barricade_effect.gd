@@ -11,3 +11,7 @@ func can_apply(_world: Battlefield, target: CardTarget) -> bool:
 
 func apply(world: Battlefield, target: CardTarget, _choice: int) -> void:
 	world.barricades.place_at(target.road_offset, health)
+
+
+func describe(values: Dictionary) -> void:
+	values["health"] = str(roundi(health))

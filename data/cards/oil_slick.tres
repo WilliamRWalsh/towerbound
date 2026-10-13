@@ -1,11 +1,12 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/cards/oil_slick.png" id="1_4i6qn"]
 [ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_51fy5"]
 [ext_resource type="Script" path="res://scripts/combat/burn_spec.gd" id="3_qwoqt"]
 [ext_resource type="Script" path="res://scripts/cards/effects/spill_oil_effect.gd" id="4_f14v8"]
+[ext_resource type="Texture2D" path="res://assets/cards/icons/oil_slick.png" id="5_51fy5"]
 [ext_resource type="Resource" path="res://data/status/oil_slow.tres" id="5_bmbuo"]
 [ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="6_ipmpt"]
+[ext_resource type="Texture2D" path="res://assets/cards/paintings/oil_slick.png" id="6_qwoqt"]
 [ext_resource type="Script" path="res://scripts/cards/targeting/area_targeting.gd" id="7_m8mwc"]
 
 [sub_resource type="Resource" id="Resource_6gp5d"]
@@ -28,7 +29,10 @@ on_road = true
 script = ExtResource("6_ipmpt")
 id = &"oil_slick"
 title = "Oil Slick"
-art = ExtResource("1_4i6qn")
 cost = 1
+painting = ExtResource("6_qwoqt")
+icon = ExtResource("5_51fy5")
+description = "Slows enemies on the road. Fire ignites it into a raging blaze."
+stats = PackedStringArray("{slow}|SLOW", "PATH|TARGET", "FIRE|IGNITES")
 targeting = SubResource("Resource_v3uk5")
 effects = Array[ExtResource("2_51fy5")]([SubResource("Resource_2pdvr")])

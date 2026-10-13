@@ -16,3 +16,10 @@ func apply(world: Battlefield, target: CardTarget, _choice: int) -> void:
 
 func damage_type() -> int:
 	return tower_stats.damage_type
+
+
+func describe(values: Dictionary) -> void:
+	values["damage"] = decimal(tower_stats.damage)
+	values["attack_speed"] = decimal(1.0 / tower_stats.fire_interval)
+	values["range"] = decimal(Units.paces(tower_stats.attack_range))
+	values["charges"] = str(tower_stats.charges)

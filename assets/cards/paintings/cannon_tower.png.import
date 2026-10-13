@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://5tj3bfwvx7jm"
-path="res://.godot/imported/barricade.png-9f1a162b219ee0a7a300713ce3f43f63.ctex"
+uid="uid://cof13vkn7eoj6"
+path="res://.godot/imported/cannon_tower.png-45c083913edecd20311c1125a1da5c97.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/barricade.png"
-dest_files=["res://.godot/imported/barricade.png-9f1a162b219ee0a7a300713ce3f43f63.ctex"]
+source_file="res://assets/cards/paintings/cannon_tower.png"
+dest_files=["res://.godot/imported/cannon_tower.png-45c083913edecd20311c1125a1da5c97.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

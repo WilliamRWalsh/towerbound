@@ -1,9 +1,10 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/cards/chill.png" id="1_rjog2"]
 [ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_ufel2"]
 [ext_resource type="Resource" path="res://data/status/chill.tres" id="3_5d7cc"]
 [ext_resource type="Script" path="res://scripts/cards/effects/frost_burst_effect.gd" id="4_0itkx"]
+[ext_resource type="Texture2D" path="res://assets/cards/icons/chill.png" id="4_ufel2"]
+[ext_resource type="Texture2D" path="res://assets/cards/paintings/chill.png" id="5_5d7cc"]
 [ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="5_iq0av"]
 [ext_resource type="Script" path="res://scripts/cards/targeting/area_targeting.gd" id="6_hqjmi"]
 
@@ -19,6 +20,9 @@ color = Color(0.55, 0.85, 1, 1)
 script = ExtResource("5_iq0av")
 id = &"chill"
 title = "Chill"
-art = ExtResource("1_rjog2")
+painting = ExtResource("5_5d7cc")
+icon = ExtResource("4_ufel2")
+description = "Slows enemies in an area. Chilled enemies take {brittle} cannon hits."
+stats = PackedStringArray("{chill_seconds}s|CHILL", "{chill_slow}|SLOW", "ANY|TARGET")
 targeting = SubResource("Resource_8jxgi")
 effects = Array[ExtResource("2_ufel2")]([SubResource("Resource_xvwa2")])

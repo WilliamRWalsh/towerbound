@@ -11,4 +11,8 @@ func apply(tower: Tower) -> void:
 
 
 func label() -> String:
-	return "Rate of Fire\n+%d%% speed" % roundi(attack_rate_bonus * 100.0)
+	return "Rate of Fire\n%s speed" % amount_text()
+
+
+func amount_text() -> String:
+	return "+%d%%" % roundi(attack_rate_bonus * 100.0)

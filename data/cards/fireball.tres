@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/cards/fireball.png" id="1_t81un"]
 [ext_resource type="Script" path="res://scripts/cards/effects/card_effect.gd" id="2_25wx2"]
 [ext_resource type="Script" path="res://scripts/combat/burn_spec.gd" id="3_6sctc"]
+[ext_resource type="Texture2D" path="res://assets/cards/icons/fireball.png" id="4_25wx2"]
 [ext_resource type="Script" path="res://scripts/cards/effects/fireball_effect.gd" id="4_f1fyh"]
 [ext_resource type="Script" path="res://scripts/cards/card_data.gd" id="5_1o35y"]
+[ext_resource type="Texture2D" path="res://assets/cards/paintings/fireball.png" id="5_6sctc"]
 [ext_resource type="Script" path="res://scripts/cards/targeting/area_targeting.gd" id="6_4f62p"]
 
 [sub_resource type="Resource" id="Resource_8okms"]
@@ -22,7 +23,10 @@ script = ExtResource("6_4f62p")
 script = ExtResource("5_1o35y")
 id = &"fireball"
 title = "Fireball"
-art = ExtResource("1_t81un")
 cost = 3
+painting = ExtResource("5_6sctc")
+icon = ExtResource("4_25wx2")
+description = "Hits a small area, then leaves the ground burning for {burn_seconds} seconds."
+stats = PackedStringArray("{damage}|DAMAGE", "{radius}|RADIUS", "{burn_seconds}s|BURN")
 targeting = SubResource("Resource_8k4ye")
 effects = Array[ExtResource("2_25wx2")]([SubResource("Resource_ofta2")])

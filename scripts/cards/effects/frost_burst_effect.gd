@@ -14,3 +14,10 @@ func apply(world: Battlefield, target: CardTarget, _choice: int) -> void:
 
 func damage_type() -> int:
 	return Damage.Type.FROST
+
+
+func describe(values: Dictionary) -> void:
+	values["damage"] = decimal(damage)
+	values["chill_seconds"] = str(roundi(chill_duration))
+	values["chill_slow"] = percent(1.0 - chill.speed_multiplier)
+	values["brittle"] = "+" + percent(chill.damage_taken.get(Damage.Type.CRUSH, 1.0) - 1.0)

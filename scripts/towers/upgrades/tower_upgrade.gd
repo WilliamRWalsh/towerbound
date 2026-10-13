@@ -20,3 +20,8 @@ func apply(_tower: Tower) -> void:
 ## Button text on the upgrade chooser, built from the upgrade's numbers so it can't go stale.
 func label() -> String:
 	return String(id).capitalize()
+
+
+## How much it adds, for card text: "+50%", "+1".
+func amount_text() -> String:
+	return ""
