@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="TowerStats" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="TowerStats" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/towers/tower_stats.gd" id="1_stats"]
+[ext_resource type="PackedScene" path="res://scenes/projectiles/arrow.tscn" id="2_projectile"]
 
 [resource]
 script = ExtResource("1_stats")
 damage = 1.5
 fire_interval = 1.0
 attack_range = 180.0
+projectile = ExtResource("2_projectile")
 projectile_speed = 420.0
 charges = 2
 damage_type = 0

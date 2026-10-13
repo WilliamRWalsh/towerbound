@@ -1,8 +1,9 @@
 class_name FrostBurst
 extends Node2D
 ## A Chill spell: a ring of frost bursts out from the target point. At once it deals frost damage
-## to every living enemy within the radius and chills them; kills pay out through the enemy's own
-## `died` signal. Then icy shards fly out and fade. Works in its parent's (map-pixel) coordinates.
+## to every living enemy within the radius and puts the chill status on them; kills pay out
+## through the enemy's own `died` signal. Then icy shards fly out and fade. Works in its parent's
+## (map-pixel) coordinates.
 
 const BURST_TIME := 0.6
 const ICE := Color(0.78, 0.93, 1.0)
@@ -15,7 +16,8 @@ var _shards: Array = []
 
 
 ## Casts a frost burst at a canvas position. `radius` is in map pixels.
-static func cast(world: Battlefield, target_global: Vector2, damage: float, radius: float, chill_duration: float) -> FrostBurst:
+static func cast(world: Battlefield, target_global: Vector2, damage: float, radius: float, chill: StatusEffect,
+		chill_duration: float) -> FrostBurst:
 	var burst := FrostBurst.new()
 	var layer := world.effects
 	burst._radius = radius
@@ -24,10 +26,12 @@ static func cast(world: Battlefield, target_global: Vector2, damage: float, radi
 			randf_range(10, 20), randf_range(0.7, 1.0)])
 	layer.add_child(burst)
 	burst.position = layer.to_local(target_global)
+	var hit := Hit.new(damage, Damage.Type.FROST)
 	for enemy in world.enemies.in_radius(burst.position, radius):
 		# Chill first so the hit flash shows the enemy already frosted.
-		enemy.apply_chill(chill_duration)
-		enemy.take_damage(damage, Damage.Type.FROST)
+		enemy.apply_status(chill, chill_duration)
+		enemy.take_hit(hit)
+	AreaEffect.touch_all(world, Damage.Type.FROST, burst.position, radius)
 	return burst
 
 

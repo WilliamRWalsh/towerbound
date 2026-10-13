@@ -1,13 +1,11 @@
-[gd_resource type="Resource" script_class="ChillCardData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ChillCardData" format=3]
 
 [ext_resource type="Script" path="res://scripts/cards/chill_card_data.gd" id="1_card"]
 [ext_resource type="Texture2D" path="res://assets/cards/chill.png" id="2_art"]
+[ext_resource type="Resource" path="res://data/status/chill.tres" id="2_klt6n"]
 
 [resource]
 script = ExtResource("1_card")
-damage = 0.5
-radius = 70.0
-chill_duration = 5.0
+chill = ExtResource("2_klt6n")
 title = "Chill"
 art = ExtResource("2_art")
-cost = 2

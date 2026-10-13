@@ -18,6 +18,8 @@ const BARRICADE := preload("res://data/cards/barricade.tres")
 const OIL := preload("res://data/cards/oil_slick.tres")
 const CHILL := preload("res://data/cards/chill.tres")
 
+const CHILL_STATUS := preload("res://data/status/chill.tres")
+
 const SKELETON := preload("res://scenes/enemies/skeleton.tscn")
 const GOBLIN := preload("res://scenes/enemies/goblin.tscn")
 const BIG_GOBLIN := preload("res://scenes/enemies/big_goblin.tscn")
@@ -476,15 +478,19 @@ func spawn(scene: PackedScene, progress: float, h_offset := 0.0) -> Enemy:
 
 
 func hit(enemy: Enemy, amount: float, type: int = Damage.NONE) -> void:
-	enemy.take_damage(amount, type)
+	enemy.take_hit(Hit.new(amount, type))
 
 
 func chill(enemy: Enemy, duration: float) -> void:
-	enemy.apply_chill(duration)
+	enemy.apply_status(CHILL_STATUS, duration)
 
 
+## A plain slow to `factor` × speed, like an oil slick's.
 func slow(enemy: Enemy, factor: float, duration: float) -> void:
-	enemy.apply_slow(factor, duration)
+	var effect := StatusEffect.new()
+	effect.id = &"test_slow"
+	effect.speed_multiplier = factor
+	enemy.apply_status(effect, duration)
 
 
 func speed_multiplier(enemy: Enemy) -> float:
@@ -492,19 +498,19 @@ func speed_multiplier(enemy: Enemy) -> float:
 
 
 func is_chilled(enemy: Enemy) -> bool:
-	return enemy.is_chilled()
+	return enemy.has_status(&"chill")
 
 
 func is_downed(enemy: Enemy) -> bool:
-	return enemy.state == Enemy.State.DOWNED
+	return enemy.is_downed()
 
 
 func is_at_gate(enemy: Enemy) -> bool:
-	return enemy.state == Enemy.State.ATTACKING
+	return enemy.is_at_gate()
 
 
 func is_blocked(enemy: Enemy) -> bool:
-	return enemy.state == Enemy.State.BLOCKED
+	return enemy.is_blocked()
 
 
 ## Places a barricade across the road at a distance along it, without a card.
@@ -520,7 +526,10 @@ func place_barricade(progress: float) -> Barricade:
 
 ## Lights a patch of burning ground, as a Fireball leaves behind. `radius` is in map pixels.
 func ignite_ground(pos: Vector2, radius: float, dps: float, duration: float) -> void:
-	BurningGround.ignite(field(), pos, radius, dps, duration)
+	var burn := BurnSpec.new()
+	burn.damage_per_second = dps
+	burn.duration = duration
+	BurningGround.ignite(field(), pos, radius, burn)
 
 
 ## Road distance of the point on the road nearest to a canvas position.
@@ -532,7 +541,7 @@ func progress_near(pos: Vector2) -> float:
 ## Calls `callback(projectile)` for every arrow or cannonball launched from now on.
 func on_projectile_launched(callback: Callable) -> void:
 	projectile_layer().child_entered_tree.connect(func(node: Node) -> void:
-		if node is Arrow or node is Cannonball:
+		if node is Projectile:
 			callback.call(node))
 
 

@@ -8,34 +8,21 @@ extends Resource
 @export var max_health := 3.0
 @export var speed := 85.0
 ## Castle (or barricade) health lost each time this enemy strikes it.
-@export var castle_damage := 1.0
+@export var strike_damage := 1.0
 ## Seconds between strikes while it stands at the gate.
 @export var attack_interval := 1.5
 ## Mana granted once when this enemy is killed.
 @export var mana_reward := 0.1
 ## Times it gets back up after being killed; `died` and the mana reward come only from the last death.
-## A killing fire hit keeps it down for good.
 @export var revives := 0
 ## Seconds from falling to standing again.
 @export var revive_delay := 2.0
-
-@export_group("Damage taken")
-## Multipliers on damage of each type: below 1 resists, above 1 is a weakness. Frost also
-## scales how long chill lasts.
-@export var pierce := 1.0
-@export var crush := 1.0
-@export var fire := 1.0
-@export var frost := 1.0
+## Damage types whose killing hit keeps it down for good, with no revive (fire burns a zombie).
+@export var final_death_types: Array[Damage.Type] = []
+## Multiplier on damage of each Damage.Type: below 1 resists, above 1 is a weakness; types not
+## listed take 1. A resistible status effect's duration scales the same way (frost and Chill).
+@export var damage_taken: Dictionary[Damage.Type, float] = {}
 
 
 func multiplier(type: int) -> float:
-	match type:
-		Damage.Type.PIERCE:
-			return pierce
-		Damage.Type.CRUSH:
-			return crush
-		Damage.Type.FIRE:
-			return fire
-		Damage.Type.FROST:
-			return frost
-	return 1.0
+	return damage_taken.get(type, 1.0)

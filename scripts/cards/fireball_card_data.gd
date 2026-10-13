@@ -6,9 +6,8 @@ extends CardData
 @export var damage := 3.0
 ## Blast radius in world units at the 720 × 1280 reference resolution.
 @export var radius := 70.0
-## Damage per second to each enemy standing in the burning patch, and how long it burns.
-@export var burn_dps := 1.0
-@export var burn_duration := 4.0
+## How the patch it leaves behind burns.
+@export var burn: BurnSpec
 
 
 func damage_type() -> int:
@@ -24,5 +23,5 @@ func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool)
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:
-	Fireball.cast(field, global_pos, damage, Units.px(radius), burn_dps, burn_duration)
+	Fireball.cast(field, global_pos, damage, Units.px(radius), burn)
 	return true

@@ -8,7 +8,8 @@ const FROST_COLOR := Color(0.55, 0.85, 1.0)
 @export var damage := 0.5
 ## Burst radius in world units at the 720 × 1280 reference resolution.
 @export var radius := 70.0
-## Seconds of chill, before each enemy's frost multiplier.
+## The status it puts on enemies, and for how long before each enemy's frost multiplier.
+@export var chill: StatusEffect
 @export var chill_duration := 5.0
 
 
@@ -25,5 +26,5 @@ func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool)
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:
-	FrostBurst.cast(field, global_pos, damage, Units.px(radius), chill_duration)
+	FrostBurst.cast(field, global_pos, damage, Units.px(radius), chill, chill_duration)
 	return true

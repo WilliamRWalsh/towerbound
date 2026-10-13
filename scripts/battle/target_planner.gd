@@ -1,17 +1,17 @@
 class_name TargetPlanner
 extends RefCounted
 ## Shared targeting for every tower on a battlefield, so towers don't overkill. An enemy whose
-## damage already in flight (the DamageLedger) plus the burn it will take from burning ground in
-## the next moment covers its health is "doomed": towers skip it for the next enemy, and hold
-## fire when everything in range is doomed. Only projectile commitments are stored, and they
+## damage already in flight (the DamageLedger) plus what ground effects (burning ground) will deal
+## it in the next moment covers its health is "doomed": towers skip it for the next enemy, and
+## hold fire when everything in range is doomed. Only projectile commitments are stored, and they
 ## always resolve, so a wrong prediction corrects itself on the next query.
 
-## Seconds of upcoming burn ticks counted as certain damage.
-const BURN_HORIZON := 1.5
+## Seconds of upcoming damage from ground effects counted as certain.
+const HORIZON := 1.5
 
 var _enemies: EnemyRegistry
 var _ledger: DamageLedger
-## The layer holding burning ground patches.
+## The layer holding ground effects.
 var _ground: Node2D
 
 
@@ -23,7 +23,7 @@ func _init(enemies: EnemyRegistry, ledger: DamageLedger, ground: Node2D) -> void
 
 ## True when damage already in flight or about to burn will finish it.
 func is_doomed(enemy: Enemy) -> bool:
-	return _ledger.incoming(enemy) + predicted_burn(enemy, BURN_HORIZON) >= enemy.health - 0.001
+	return _ledger.incoming(enemy) + predicted_area_damage(enemy, HORIZON) >= enemy.health - 0.001
 
 
 ## The living enemy within `reach` of `from` (map pixels) furthest along the path that isn't
@@ -40,18 +40,14 @@ func pick_target(from: Vector2, reach: float) -> Enemy:
 	return best
 
 
-## Burn damage `enemy` will take from every burning patch over the next `horizon` seconds, assuming
-## a walking enemy keeps its current speed along the path and a striking one stays put. Barricades
-## and later slows are ignored, so this only ever under-predicts.
-func predicted_burn(enemy: Enemy, horizon: float) -> float:
+## Damage `enemy` will take from every ground effect over the next `horizon` seconds. Effects
+## predict with `future_position`; barricades and later slows are ignored, so this only ever
+## under-predicts.
+func predicted_area_damage(enemy: Enemy, horizon: float) -> float:
 	var total := 0.0
-	var fire := enemy.damage_after_resistance(1.0, Damage.Type.FIRE)
-	for patch in _ground.get_children():
-		if not patch is BurningGround:
-			continue
-		for t in patch.upcoming_ticks(horizon):
-			if patch.contains(future_position(enemy, t)):
-				total += patch.tick_damage() * fire
+	for effect in _ground.get_children():
+		if effect is AreaEffect:
+			total += effect.predicted_damage_to(enemy, horizon)
 	return total
 
 

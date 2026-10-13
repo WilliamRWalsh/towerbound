@@ -43,6 +43,11 @@ func is_destroyed() -> bool:
 	return health <= 0.001
 
 
+## Still standing, so enemies at the gate keep striking it (barricades answer the same question).
+func is_standing() -> bool:
+	return not is_destroyed()
+
+
 func is_full() -> bool:
 	return health >= max_health
 

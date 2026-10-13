@@ -9,12 +9,11 @@ const OIL_COLOR := Color(0.62, 0.45, 0.9)
 
 ## Slick radius in world units at the 720 × 1280 reference resolution.
 @export var radius := 55.0
-## Speed multiplier for enemies in the slick.
-@export var slow := 0.6
+## The status enemies wading through it get.
+@export var slow: StatusEffect
 @export var duration := 25.0
-## The blaze the slick becomes when ignited.
-@export var burn_dps := 2.5
-@export var burn_duration := 7.0
+## How the slick burns once ignited.
+@export var blaze: BurnSpec
 
 
 func begin_targeting(field: Battlefield) -> void:
@@ -31,6 +30,5 @@ func play(field: Battlefield, global_pos: Vector2) -> bool:
 	var point := field.road_point(global_pos, SNAP_DISTANCE)
 	if point == Vector2.INF:
 		return false
-	OilSlick.spill(field, point, Units.px(radius), slow, duration,
-		burn_dps, burn_duration)
+	OilSlick.spill(field, point, Units.px(radius), slow, duration, blaze)
 	return true

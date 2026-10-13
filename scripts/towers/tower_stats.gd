@@ -8,6 +8,8 @@ extends Resource
 ## Seconds between shots.
 @export var fire_interval := 1.0
 @export var attack_range := 180.0
+## What it fires: a scene whose root is a Projectile (arrow, cannonball).
+@export var projectile: PackedScene
 @export var projectile_speed := 420.0
 ## Waves of firing before the tower must sit out a wave reloading. Firing at least once in a wave
 ## spends one charge. 0 means unlimited ammo (castle turrets).

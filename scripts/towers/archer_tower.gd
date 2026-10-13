@@ -9,7 +9,7 @@ const MUZZLE := Vector2(0, -125)
 
 
 func _fire(target: Enemy) -> void:
-	Arrow.launch(_world, to_global(MUZZLE), target, stats.damage, stats.damage_type, stats.projectile_speed)
+	_launch(target, to_global(MUZZLE))
 	# A quick squash sells the shot without delaying it.
 	var tween := create_tween()
 	tween.tween_property(_sprite, "scale", Vector2(0.98, 0.9), 0.05)

@@ -48,7 +48,7 @@ func _fire(target: Enemy) -> void:
 	_aim = (target.global_position - _gun.global_position).angle()
 	var dir := Vector2.from_angle(_aim)
 	var muzzle := dir * (BARREL_LENGTH + 4.0)
-	Cannonball.launch(_world, _gun.to_global(muzzle), target, stats.damage, stats.damage_type, stats.projectile_speed)
+	_launch(target, _gun.to_global(muzzle))
 	for i in 4:
 		var drift := dir.rotated(randf_range(-0.6, 0.6)) * randf_range(14, 34) + Vector2(0, -18)
 		_smoke.append([muzzle, randf_range(-0.05, 0.0), drift])

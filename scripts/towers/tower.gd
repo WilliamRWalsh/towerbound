@@ -181,8 +181,15 @@ func find_target() -> Enemy:
 	return _world.targeting.pick_target(_world.to_local(global_position), Units.px(stats.attack_range))
 
 
-func _fire(_target: Enemy) -> void:
-	pass
+## Shoots at `target`. Subclasses that animate the shot call `_launch` with their muzzle.
+func _fire(target: Enemy) -> void:
+	_launch(target, global_position)
+
+
+## Fires the stats' projectile from a canvas position.
+func _launch(target: Enemy, from_global: Vector2) -> void:
+	Projectile.fire(stats.projectile, _world, from_global, target, Hit.new(stats.damage, stats.damage_type),
+		stats.projectile_speed)
 
 
 func _draw() -> void:

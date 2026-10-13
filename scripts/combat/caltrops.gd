@@ -1,10 +1,9 @@
 class_name Caltrops
-extends Node2D
+extends AreaEffect
 ## Iron spikes scattered across the road just short of the castle gate crowd, left by a Barricade
 ## card thrown away with Discard. Each enemy that walks over them takes pierce damage once, until
 ## the spikes have hurt `hits_left` enemies; then they fade. Scattering more while some are down
-## adds to the same patch. Sits on the ground layer, under the enemies. Works in its parent's
-## (map-pixel) coordinates.
+## adds to the same patch.
 
 ## How far before the end of the road the patch lies, in map pixels: just ahead of the gate crowd.
 const FROM_END := 270.0
@@ -13,67 +12,58 @@ const SPAN := 60.0
 const FADE_TIME := 0.5
 
 var hits_left := 0
-var _world: Battlefield
 var _damage := 1.0
-var _path: Path2D
 ## Distance along the path of the patch's center.
 var _progress := 0.0
 ## Enemies already hurt, so each pays once.
 var _hurt: Dictionary[Enemy, bool] = {}
 ## Each spike: [position, angle].
 var _spikes: Array = []
-var _fade := -1.0
 
 
 ## Scatters spikes that hurt the next `hits` enemies, or adds them to the patch already down.
-static func scatter(world: Battlefield, hits: int, damage: float) -> Caltrops:
-	for existing in world.ground.get_children():
+static func scatter(battle_world: Battlefield, hits: int, damage: float) -> Caltrops:
+	for existing in battle_world.ground.get_children():
 		if existing is Caltrops and existing.hits_left > 0:
 			existing.hits_left += hits
 			existing._add_spikes(hits)
 			return existing
-	var layer := world.ground
-	var path := world.path
+	var path := battle_world.path
 	var caltrops := Caltrops.new()
-	caltrops._world = world
-	caltrops._path = path
 	caltrops._damage = damage
 	caltrops.hits_left = hits
 	caltrops._progress = path.curve.get_baked_length() - FROM_END
-	layer.add_child(caltrops)
-	caltrops.global_position = path.to_global(path.curve.sample_baked(caltrops._progress))
+	caltrops.place(battle_world, path.to_global(path.curve.sample_baked(caltrops._progress)))
 	caltrops._add_spikes(hits)
 	return caltrops
 
 
-func _process(delta: float) -> void:
-	if _fade >= 0.0:
-		_fade += delta
-		modulate.a = 1.0 - _fade / FADE_TIME
-		if _fade >= FADE_TIME:
-			queue_free()
+## Every frame: hurts enemies stepping onto the spikes, or fades once they are used up.
+func _tick() -> void:
+	if hits_left <= 0:
+		modulate.a = fade(FADE_TIME)
 		return
-	var start := _progress - SPAN * 0.5
-	var end := _progress + SPAN * 0.5
-	for enemy in _world.enemies.on_road_between(start, end):
+	var hit := Hit.new(_damage, Damage.Type.PIERCE)
+	for enemy in world.enemies.on_road_between(_progress - SPAN * 0.5, _progress + SPAN * 0.5):
 		if hits_left <= 0:
 			break
 		if not _hurt.has(enemy):
 			_hurt[enemy] = true
 			hits_left -= 1
-			enemy.take_damage(_damage, Damage.Type.PIERCE)
+			enemy.take_hit(hit)
 	if hits_left <= 0:
-		_fade = 0.0
+		duration = age + FADE_TIME
 
 
 ## Adds spikes along the patch, a couple per hit, scattered across the road.
 func _add_spikes(hits: int) -> void:
-	var curve := _path.curve
+	var path := world.path
+	var curve := path.curve
 	for i in hits * 2:
 		var along := _progress + randf_range(-SPAN * 0.5, SPAN * 0.5)
 		var road := curve.sample_baked(along)
 		var across := (curve.sample_baked(along + 4.0) - road).normalized().orthogonal()
-		var spot := _path.to_global(road + across * randf_range(-55.0, 55.0))
+		var spot := path.to_global(road + across * randf_range(-55.0, 55.0))
 		_spikes.append([to_local(spot), randf() * TAU])
 	queue_redraw()
 

@@ -1,73 +1,37 @@
 class_name Arrow
-extends Node2D
-## An arrow flying from a tower to an enemy. Homes on the target's chest and deals damage once
-## on contact. If the target dies or leaves play mid-flight, the arrow lands where it was aimed
-## and fades out without effect. Works in its parent's (map-pixel) coordinates.
+extends Projectile
+## An arrow flying straight at an enemy's chest. If the target is gone by the time it gets there,
+## it drops where it was aimed and fades out.
 
 const LENGTH := 34.0
 const TRAIL_LENGTH := 48.0
 const HIT_RADIUS := 8.0
 const FADE_TIME := 0.25
 
-var _target: Enemy
-var _damage := 1.0
-var _damage_type := Damage.Type.PIERCE
-var _speed := 0.0
-## Damage reserved with the battlefield's DamageLedger until this resolves; the enemy's instance
-## id it is for.
-var _ledger: DamageLedger
-var _committed := 0.0
-var _committed_to := 0
-var _aim := Vector2.ZERO
 var _traveled := 0.0
-var _done := false
 
 
-## Fires an arrow from a canvas position. `speed` is in reference units per second.
-static func launch(world: Battlefield, from_global: Vector2, target: Enemy, damage: float,
-		damage_type: Damage.Type, speed: float) -> Arrow:
-	var arrow := Arrow.new()
-	arrow._target = target
-	arrow._damage = damage
-	arrow._damage_type = damage_type
-	arrow._speed = Units.px(speed)
-	var layer := world.effects
-	arrow._ledger = world.ledger
-	arrow._committed = world.ledger.commit(target, damage, damage_type)
-	arrow._committed_to = target.get_instance_id()
-	layer.add_child(arrow)
-	arrow.position = layer.to_local(from_global)
-	arrow._aim = layer.to_local(target.aim_point())
-	arrow.rotation = (arrow._aim - arrow.position).angle()
-	return arrow
+func _launched() -> void:
+	rotation = (_aim - position).angle()
 
 
-func _process(delta: float) -> void:
-	if _done:
-		return
-	var tracking := is_instance_valid(_target) and _target.is_alive()
-	if tracking:
-		_aim = get_parent().to_local(_target.aim_point())
+func _advance(delta: float) -> bool:
 	var to_aim := _aim - position
 	var step := _speed * delta
 	if to_aim.length() <= step + HIT_RADIUS:
 		position = _aim
-		_release()
-		if tracking:
-			_target.take_damage(_damage, _damage_type)
-			queue_free()
-		else:
-			_land()
-		return
+		return true
 	rotation = to_aim.angle()
 	position += to_aim.normalized() * step
 	_traveled += step
 	queue_redraw()
+	return false
 
 
-## The target is gone: drop the arrow where it was headed and fade it out.
-func _land() -> void:
-	_done = true
+func _arrive(struck: bool) -> void:
+	if struck:
+		queue_free()
+		return
 	_traveled = 0.0
 	queue_redraw()
 	var tween := create_tween()
@@ -91,14 +55,3 @@ func _draw() -> void:
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(-LENGTH + 9, 0), Vector2(-LENGTH, 0), Vector2(-LENGTH - 4, 6.0 * side), Vector2(-LENGTH + 5, 6.0 * side),
 		]), Color(0.9, 0.2, 0.15))
-
-
-func _exit_tree() -> void:
-	_release()
-
-
-## Hands the reserved damage back to the ledger, once.
-func _release() -> void:
-	if _committed_to != 0:
-		_ledger.release(_committed_to, _committed)
-		_committed_to = 0

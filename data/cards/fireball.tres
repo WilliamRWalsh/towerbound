@@ -1,14 +1,16 @@
-[gd_resource type="Resource" script_class="FireballCardData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="FireballCardData" format=3]
 
 [ext_resource type="Script" path="res://scripts/cards/fireball_card_data.gd" id="1_card"]
+[ext_resource type="Script" path="res://scripts/combat/burn_spec.gd" id="2_7gd24"]
 [ext_resource type="Texture2D" path="res://assets/cards/fireball.png" id="2_art"]
+
+[sub_resource type="Resource" id="Resource_j11nj"]
+script = ExtResource("2_7gd24")
+duration = 10.0
 
 [resource]
 script = ExtResource("1_card")
-damage = 3
-radius = 70.0
-burn_dps = 1.0
-burn_duration = 10.0
+burn = SubResource("Resource_j11nj")
 title = "Fireball"
 art = ExtResource("2_art")
 cost = 3

@@ -111,7 +111,6 @@ func _start_combat() -> void:
 func _on_enemy_spawned(enemy: Enemy) -> void:
 	_active_enemies += 1
 	enemy.died.connect(_on_enemy_died)
-	enemy.attacked_castle.connect(_on_enemy_attacked_castle)
 	enemy_spawned.emit(enemy)
 
 
@@ -125,11 +124,6 @@ func _on_enemy_died(enemy: Enemy) -> void:
 		kill_rewarded.emit(enemy, granted)
 		mana.add(granted)
 	_check_wave_end()
-
-
-func _on_enemy_attacked_castle(_enemy: Enemy, damage: float) -> void:
-	if not is_over():
-		field.castle.take_damage(damage)
 
 
 ## The wave is over once everything has been sent and nothing is left alive.

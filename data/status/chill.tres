@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StatusEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/status_effect.gd" id="1_xu5rg"]
+
+[resource]
+script = ExtResource("1_xu5rg")
+id = &"chill"
+speed_multiplier = 0.5
+strike_interval_multiplier = 1.5
+damage_taken = Dictionary[int, float]({
+1: 1.5
+})
+element = 3
+resistible = true
+tint = Color(0.62, 0.85, 1, 1)
