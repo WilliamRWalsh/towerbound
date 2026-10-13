@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_stats")
-damage = 0.25
+damage = 0.75
 fire_interval = 1.0
 attack_range = 180.0
 projectile_speed = 420.0

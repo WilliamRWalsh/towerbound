@@ -56,13 +56,13 @@ These defaults make the first slice implementable. They are not final game balan
 | Setting | Initial value |
 | --- | --- |
 | Prototype deck | 15 cards: 4 Archer Tower, 2 Cannon Tower, 2 Fireball, 2 Upgrade, 2 Repair (Heal), 1 Barricade, 1 Oil Slick, 1 Chill (changed from 16 Archer Towers; see log) |
-| Starting mana | 5 (changed from 8, then 4; see log) |
+| Starting mana | 6 (changed from 8, then 4, then 5; see log) |
 | Mana cap | 10 |
 | Archer Tower cost | 2 mana |
 | Mana per skeleton killed | 1 |
 | Skeleton health | 3 |
 | Skeleton castle damage | 0.85 (changed from 1; see log) |
-| Archer Tower damage | 1 per shot |
+| Archer Tower damage | 1.5 per shot (changed from 1; see log) |
 | Archer Tower firing interval | 1 second |
 | Archer Tower range | 180 world units at the reference resolution |
 | Enemies per wave | 16 on wave one, rising to 89 on wave ten in tight clumps (see `tools/make_waves.py` and log) |
@@ -400,4 +400,5 @@ Run these checks as the corresponding systems become available and repeat the co
     - Defeat with the chooser open closed it, and a late pick did nothing.
     - Screenshots of the chooser and the upgraded tower (badge plus three pips) were reviewed.
     - Not yet checked on the iOS simulator or the phone.
+- 2026-10-12 — Stronger towers and more starting mana (tuning, at the user's request; milestones unchanged). Starting mana changed from 5 to 6. Archer Tower arrows deal 1.5 instead of 1 (0.75 to skeletons, 2.25 to big goblins). Castle turret arrows deal 0.75 instead of 0.25, half an Archer Tower's. The Cannon Tower fires every 2.0 s instead of 2.5 s (25% faster). The printed card stats were not redrawn. Validated: the project ran headless with no errors, and `run_ios_device.sh` built, installed, and launched it on the iPhone. Not play-tested.
 - Add subsequent entries with the milestone, completed behavior, validation performed, and any tuning changes with their reason.
