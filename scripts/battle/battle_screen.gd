@@ -56,13 +56,11 @@ func _on_preparation_started(number: int, wave: WaveConfig) -> void:
 
 
 func _on_combat_started(_number: int) -> void:
-	_field.grid.begin_wave()
 	_preview.hide_wave()
 	_banner.show_message("Enemies Attacking!", Banner.Style.DANGER)
 
 
 func _on_wave_cleared(number: int) -> void:
-	_field.grid.end_wave()
 	_banner.show_message("Wave %d Defeated" % number, Banner.Style.VICTORY)
 
 

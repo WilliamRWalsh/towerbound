@@ -1,13 +1,13 @@
 class_name BuildGrid
 extends Node2D
-## Build grid over the map's meadow. Works in map-pixel coordinates; the parent battlefield
-## scales it with the map. Draws faint cell lines, and highlights cells while a card is aimed:
-## open cells when placing a tower, upgradeable towers when upgrading.
+## Build grid over the map's meadow: which cells are open, blocked (road, trees, castle), or
+## occupied, and the towers standing on them. Works in map-pixel coordinates; the parent
+## battlefield scales it with the map. Draws faint cell lines; its PlacementPreview child shows
+## what a card aimed at the grid would do.
 
 signal tower_placed(cell: Vector2i)
 
 enum CellState { BUILDABLE, BLOCKED, OCCUPIED }
-enum Targeting { NONE, PLACE, UPGRADE }
 
 const NO_CELL := Vector2i(-1, -1)
 
@@ -27,10 +27,6 @@ const NO_CELL := Vector2i(-1, -1)
 
 var _states: Dictionary[Vector2i, CellState] = {}
 var _towers: Dictionary[Vector2i, Tower] = {}
-var _targeting := Targeting.NONE
-var _hover := NO_CELL
-var _preview_range := 0.0
-var _ghost: Node2D = null
 
 
 func _ready() -> void:
@@ -75,25 +71,16 @@ func tower_at(cell: Vector2i) -> Tower:
 	return _towers.get(cell)
 
 
-func can_upgrade(cell: Vector2i) -> bool:
-	var tower := tower_at(cell)
-	return tower != null and tower.can_upgrade()
+## Every placed tower.
+func towers() -> Array[Tower]:
+	var list: Array[Tower] = []
+	list.assign(_towers.values())
+	return list
 
 
-func has_upgradeable_tower() -> bool:
-	return _towers.keys().any(can_upgrade)
-
-
-## Tells every placed tower a wave's combat has begun (towers track their ammo per wave).
-func begin_wave() -> void:
-	for tower: Tower in _towers.values():
-		tower.begin_wave()
-
-
-## Tells every placed tower the wave was cleared, so empty towers start or finish reloading.
-func end_wave() -> void:
-	for tower: Tower in _towers.values():
-		tower.end_wave()
+## Every cell, by state.
+func cells() -> Dictionary[Vector2i, CellState]:
+	return _states
 
 
 ## Removes every placed tower and restores the detected cell states.
@@ -101,46 +88,7 @@ func clear() -> void:
 	for tower in $Towers.get_children():
 		tower.queue_free()
 	_towers.clear()
-	end_placement()
 	_detect_cells()
-
-
-## Shows buildable cells, a ghost tower, and its range while a card is being placed.
-func begin_placement(tower_scene: PackedScene, stats: TowerStats) -> void:
-	end_placement()
-	_ghost = tower_scene.instantiate()
-	_ghost.modulate = Color(1, 1, 1, 0.6)
-	_ghost.visible = false
-	add_child(_ghost)
-	_preview_range = Units.px(stats.attack_range)
-	_targeting = Targeting.PLACE
-	queue_redraw()
-
-
-## Highlights towers that can still be upgraded while an Upgrade card is aimed.
-func begin_upgrade_targeting() -> void:
-	end_placement()
-	_targeting = Targeting.UPGRADE
-	queue_redraw()
-
-
-## Moves the placement preview. Pass `over_grid = false` when the pointer is over UI.
-func update_pointer(global_pos: Vector2, over_grid := true) -> void:
-	if _targeting == Targeting.NONE:
-		return
-	_hover = world_to_cell(global_pos) if over_grid else NO_CELL
-	if _ghost:
-		_ghost.visible = over_grid
-		_ghost.position = cell_center(_hover) if _hover != NO_CELL else to_local(global_pos)
-	queue_redraw()
-
-
-func end_placement() -> void:
-	if _ghost:
-		_ghost.queue_free()
-		_ghost = null
-	_targeting = Targeting.NONE
-	_hover = NO_CELL
 	queue_redraw()
 
 
@@ -192,40 +140,3 @@ func _draw() -> void:
 	for cell in _states:
 		if _states[cell] != CellState.BLOCKED:
 			draw_rect(cell_rect(cell), Color(1, 1, 0.9, 0.16), false, 1.5)
-	if _targeting == Targeting.UPGRADE:
-		_draw_upgrade_targets()
-		return
-	if _targeting != Targeting.PLACE:
-		return
-	for cell in _states:
-		if _states[cell] == CellState.BUILDABLE:
-			var rect := cell_rect(cell).grow(-3)
-			draw_rect(rect, Color(0.7, 1.0, 0.5, 0.16))
-			draw_rect(rect, Color(1, 1, 1, 0.35), false, 1.5)
-	if _hover == NO_CELL:
-		return
-	var hover_rect := cell_rect(_hover).grow(-2)
-	if can_build(_hover):
-		draw_circle(cell_center(_hover), _preview_range, Color(1.0, 0.9, 0.45, 0.14))
-		draw_arc(cell_center(_hover), _preview_range, 0, TAU, 96, Color(1.0, 0.88, 0.4, 0.8), 3.0)
-		draw_rect(hover_rect, Color(1.0, 0.85, 0.3, 0.95), false, 4.0)
-	else:
-		draw_rect(hover_rect, Color(0.9, 0.15, 0.1, 0.4))
-		draw_rect(hover_rect, Color(1.0, 0.3, 0.2, 0.9), false, 3.0)
-
-
-func _draw_upgrade_targets() -> void:
-	for cell in _towers:
-		if can_upgrade(cell):
-			var rect := cell_rect(cell).grow(-3)
-			draw_rect(rect, Color(1.0, 0.85, 0.3, 0.3))
-			draw_rect(rect, Color(1.0, 0.88, 0.45, 0.9), false, 3.0)
-	if _hover == NO_CELL:
-		return
-	var hover_rect := cell_rect(_hover).grow(-2)
-	if can_upgrade(_hover):
-		draw_rect(hover_rect, Color(1.0, 0.85, 0.3, 0.3))
-		draw_rect(hover_rect, Color(1.0, 0.85, 0.3, 0.95), false, 4.0)
-	else:
-		draw_rect(hover_rect, Color(0.9, 0.15, 0.1, 0.4))
-		draw_rect(hover_rect, Color(1.0, 0.3, 0.2, 0.9), false, 3.0)

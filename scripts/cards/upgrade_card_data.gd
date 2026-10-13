@@ -1,52 +1,57 @@
 class_name UpgradeCardData
 extends CardData
-## Upgrades a placed tower: either its attack rate or its ammo capacity, each once per tower.
-## When both are still open the player picks one; when only one is left it applies directly.
+## Upgrades a placed tower with one of `upgrades`, each at most once per tower. When more than one
+## still applies the player picks; when only one is left it applies directly.
 
-enum Choice { RATE, AMMO }
-
-## 0.5 = 50% more shots per second.
-@export var attack_rate_bonus := 0.5
-## Charges added to the tower's capacity.
-@export var extra_charges := 1
+## The upgrades on offer, in chooser order.
+@export var upgrades: Array[TowerUpgrade] = []
 
 
 func can_play(field: Battlefield) -> bool:
-	return field.grid.has_upgradeable_tower()
+	return field.grid.towers().any(func(tower: Tower) -> bool: return not _options(tower).is_empty())
 
 
 func begin_targeting(field: Battlefield) -> void:
-	field.grid.begin_upgrade_targeting()
+	field.placement.show_tower_targets(func(tower: Tower) -> bool: return not _options(tower).is_empty())
 
 
 func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool) -> void:
-	field.grid.update_pointer(global_pos, over_field)
+	field.placement.update_pointer(global_pos, over_field)
 
 
 func choices_at(field: Battlefield, global_pos: Vector2) -> PackedStringArray:
 	var tower := _tower_at(field, global_pos)
-	if tower == null or not (tower.can_upgrade_rate() and tower.can_upgrade_ammo()):
-		return PackedStringArray()
-	return PackedStringArray([
-		"Rate of Fire\n+%d%% speed" % roundi(attack_rate_bonus * 100.0),
-		"Ammo\n+%d charge%s" % [extra_charges, "" if extra_charges == 1 else "s"],
-	])
+	var labels := PackedStringArray()
+	if tower == null:
+		return labels
+	var options := _options(tower)
+	if options.size() > 1:
+		for option in options:
+			labels.append(option.label())
+	return labels
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:
-	var tower := _tower_at(field, global_pos)
-	if tower == null:
-		return false
-	return tower.upgrade_rate(attack_rate_bonus) or tower.upgrade_ammo(extra_charges)
+	return play_choice(field, global_pos, 0)
 
 
 func play_choice(field: Battlefield, global_pos: Vector2, choice: int) -> bool:
 	var tower := _tower_at(field, global_pos)
 	if tower == null:
 		return false
-	if choice == Choice.AMMO:
-		return tower.upgrade_ammo(extra_charges)
-	return tower.upgrade_rate(attack_rate_bonus)
+	var options := _options(tower)
+	if choice < 0 or choice >= options.size():
+		return false
+	return tower.upgrade(options[choice])
+
+
+## The upgrades `tower` can still take, in chooser order.
+func _options(tower: Tower) -> Array[TowerUpgrade]:
+	var options: Array[TowerUpgrade] = []
+	for option in upgrades:
+		if tower.can_take(option):
+			options.append(option)
+	return options
 
 
 func _tower_at(field: Battlefield, global_pos: Vector2) -> Tower:

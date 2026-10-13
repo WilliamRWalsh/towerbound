@@ -10,7 +10,12 @@ extends Node2D
 ## Share of any vertical overflow cropped from the top (the rest comes off the bottom).
 const TOP_CROP_SHARE := 0.35
 
+## The rules running this battle; towers follow its waves. Set by the battle screen's scene.
+@export var battle: Battle
+
 @onready var grid: BuildGrid = $BuildGrid
+## What the grid shows while a card is aimed at it.
+@onready var placement: PlacementPreview = $BuildGrid/PlacementPreview
 @onready var castle: Castle = $Castle
 @onready var barricades: BarricadeLayer = $BuildGrid/Barricades
 ## Projectiles and spell effects, in map pixels.
@@ -56,7 +61,7 @@ func road_point(global_pos: Vector2, max_distance: float) -> Vector2:
 
 ## Clears every targeting preview a card may have turned on.
 func clear_targeting() -> void:
-	grid.end_placement()
+	placement.clear()
 	overlay.hide_circle()
 	barricades.end_preview()
 	castle.highlighted = false

@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="UpgradeCardData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="UpgradeCardData" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/cards/upgrade_card_data.gd" id="1_card"]
 [ext_resource type="Texture2D" path="res://assets/cards/upgrade.png" id="2_art"]
+[ext_resource type="Script" path="res://scripts/towers/upgrades/tower_upgrade.gd" id="3_upgrade"]
+[ext_resource type="Resource" path="res://data/upgrades/rate.tres" id="4_rate"]
+[ext_resource type="Resource" path="res://data/upgrades/ammo.tres" id="5_ammo"]
 
 [resource]
 script = ExtResource("1_card")
-attack_rate_bonus = 0.5
-extra_charges = 1
+upgrades = Array[ExtResource("3_upgrade")]([ExtResource("4_rate"), ExtResource("5_ammo")])
 title = "Upgrade"
 art = ExtResource("2_art")
 cost = 3

@@ -19,7 +19,8 @@
 script = ExtResource("1_screen")
 level = ExtResource("8_level")
 
-[node name="Battlefield" parent="." instance=ExtResource("2_field")]
+[node name="Battlefield" parent="." node_paths=PackedStringArray("battle") instance=ExtResource("2_field")]
+battle = NodePath("../Battle")
 
 [node name="Battle" type="Node" parent="." node_paths=PackedStringArray("field")]
 script = ExtResource("6_battle")

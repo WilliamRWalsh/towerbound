@@ -12,11 +12,11 @@ func damage_type() -> int:
 
 
 func begin_targeting(field: Battlefield) -> void:
-	field.grid.begin_placement(tower_scene, tower_stats)
+	field.placement.show_placement(tower_scene, tower_stats)
 
 
 func update_targeting(field: Battlefield, global_pos: Vector2, over_field: bool) -> void:
-	field.grid.update_pointer(global_pos, over_field)
+	field.placement.update_pointer(global_pos, over_field)
 
 
 func play(field: Battlefield, global_pos: Vector2) -> bool:

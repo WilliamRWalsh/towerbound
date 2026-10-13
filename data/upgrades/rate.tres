@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="RateUpgrade" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/towers/upgrades/rate_upgrade.gd" id="1_rate"]
+
+[resource]
+script = ExtResource("1_rate")
+attack_rate_bonus = 0.5
+id = &"rate"
+shows_badge = true

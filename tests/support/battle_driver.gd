@@ -19,6 +19,8 @@ const OIL := preload("res://data/cards/oil_slick.tres")
 const CHILL := preload("res://data/cards/chill.tres")
 
 const CHILL_STATUS := preload("res://data/status/chill.tres")
+const RATE_UPGRADE := preload("res://data/upgrades/rate.tres")
+const AMMO_UPGRADE := preload("res://data/upgrades/ammo.tres")
 
 const SKELETON := preload("res://scenes/enemies/skeleton.tscn")
 const GOBLIN := preload("res://scenes/enemies/goblin.tscn")
@@ -429,36 +431,38 @@ func place_tower(cell: Vector2i, card_data: CardData = ARCHER) -> Tower:
 
 
 func upgrade_rate(tower: Tower) -> bool:
-	return tower.upgrade_rate((UPGRADE as UpgradeCardData).attack_rate_bonus)
+	return tower.upgrade(RATE_UPGRADE)
 
 
 func upgrade_ammo(tower: Tower) -> bool:
-	return tower.upgrade_ammo((UPGRADE as UpgradeCardData).extra_charges)
+	return tower.upgrade(AMMO_UPGRADE)
 
 
 func charges_left(tower: Tower) -> int:
-	return tower.charges_left
+	return tower.ammo.left
 
 
 func max_charges(tower: Tower) -> int:
-	return tower.max_charges
+	return tower.ammo.capacity
 
 
 func is_reloading(tower: Tower) -> bool:
-	return tower.reloading
+	return tower.ammo.reloading
 
 
 func fire_interval(tower: Tower) -> float:
-	return tower.fire_interval
+	return tower.stats.fire_interval
 
 
-## Tells the towers a wave's combat began or ended, without running a wave.
+## Tells the placed towers a wave's combat began or ended, without running a wave.
 func begin_wave() -> void:
-	field().grid.begin_wave()
+	for tower in towers():
+		tower.begin_wave()
 
 
 func end_wave() -> void:
-	field().grid.end_wave()
+	for tower in towers():
+		tower.end_wave()
 
 
 ## Stops the castle wall's turrets so only placed towers shoot.
