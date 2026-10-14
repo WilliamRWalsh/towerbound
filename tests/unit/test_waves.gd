@@ -20,6 +20,17 @@ func test_enemy_counts_per_wave() -> void:
 	assert_eq(total, 491)
 
 
+func test_mana_reward_per_wave() -> void:
+	var rewards: Array[float] = []
+	for wave in WOODLAND.waves:
+		rewards.append(wave.mana_reward)
+	assert_eq(rewards, [3.0, 3.0, 4.0, 4.0, 5.0, 5.0, 6.0, 6.0, 7.0, 7.0] as Array[float])
+
+
+func test_reward_weight_sums_the_enemies() -> void:
+	assert_almost_eq(WOODLAND.waves[0].reward_weight(), 16.0, 0.001, "11 skeletons, 5 goblins")
+
+
 func test_wave_one_sends_skeletons_and_goblins() -> void:
 	var counts: Array = WOODLAND.waves[0].enemy_counts()
 	assert_eq(counts.size(), 2)

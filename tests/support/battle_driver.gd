@@ -205,6 +205,14 @@ func discard_button() -> Button:
 	return main.get_node("HandLayer/DiscardButton")
 
 
+func speed_toggle() -> SpeedToggle:
+	return main.get_node("HandLayer/SpeedToggle")
+
+
+func is_fast() -> bool:
+	return speed_toggle().fast
+
+
 func chooser() -> UpgradeChooser:
 	return main.get_node("HandLayer/UpgradeChooser")
 
@@ -398,6 +406,10 @@ func press_cancel() -> void:
 
 func press_discard() -> void:
 	await tap(discard_button().get_global_rect().get_center())
+
+
+func press_speed() -> void:
+	await tap(speed_toggle().get_global_rect().get_center())
 
 
 ## Picks a chooser option by the start of its label ("Rate", "Ammo").

@@ -38,7 +38,7 @@ func test_fireball_hits_everything_in_its_radius_once() -> void:
 	assert_eq(deaths.size(), 3)
 	for count in deaths.values():
 		assert_eq(count, 1)
-	assert_almost_eq(d.mana(), 6.0 - 3.0 + 3 * 0.3, 0.001)
+	assert_almost_eq(d.mana(), 6.0 - 3.0 + 3 * 0.19, 0.001, "three skeleton shares of wave 1")
 	assert_eq(goblin.health, 3.0, "far away goblin untouched")
 
 

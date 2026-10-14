@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/battle/battle_screen.gd" id="1_screen"]
 [ext_resource type="PackedScene" path="res://scenes/battlefield.tscn" id="2_field"]
@@ -14,6 +14,7 @@
 [ext_resource type="Script" path="res://scripts/ui/hud_layout.gd" id="12_layout"]
 [ext_resource type="Script" path="res://scripts/ui/upgrade_chooser.gd" id="13_chooser"]
 [ext_resource type="PackedScene" path="res://scenes/debug_overlay.tscn" id="14_debug"]
+[ext_resource type="Script" path="res://scripts/ui/speed_toggle.gd" id="15_speed"]
 
 [node name="BattleScreen" type="Node"]
 script = ExtResource("1_screen")
@@ -34,7 +35,7 @@ hand = NodePath("../HandLayer/Hand")
 chooser = NodePath("../HandLayer/UpgradeChooser")
 discard_button = NodePath("../HandLayer/DiscardButton")
 
-[node name="HandLayer" type="CanvasLayer" parent="." node_paths=PackedStringArray("hand", "wave_hud", "wave_preview", "health_bar", "mana_bar", "discard_button")]
+[node name="HandLayer" type="CanvasLayer" parent="." node_paths=PackedStringArray("hand", "wave_hud", "wave_preview", "health_bar", "mana_bar", "discard_button", "speed_toggle")]
 script = ExtResource("12_layout")
 hand = NodePath("Hand")
 wave_hud = NodePath("WaveHud")
@@ -42,6 +43,7 @@ wave_preview = NodePath("WavePreview")
 health_bar = NodePath("HealthBar")
 mana_bar = NodePath("ManaBar")
 discard_button = NodePath("DiscardButton")
+speed_toggle = NodePath("SpeedToggle")
 
 [node name="WaveHud" type="Control" parent="HandLayer"]
 layout_mode = 3
@@ -61,6 +63,16 @@ offset_bottom = 54.0
 focus_mode = 0
 theme_type_variation = &"DiscardButton"
 text = "Discard"
+
+[node name="SpeedToggle" type="Button" parent="HandLayer" node_paths=PackedStringArray("battle")]
+offset_right = 96.0
+offset_bottom = 56.0
+focus_mode = 0
+theme_type_variation = &"SpeedButton"
+toggle_mode = true
+text = "x2"
+script = ExtResource("15_speed")
+battle = NodePath("../../Battle")
 
 [node name="Hand" type="Control" parent="HandLayer"]
 layout_mode = 3

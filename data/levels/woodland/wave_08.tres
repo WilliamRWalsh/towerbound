@@ -40,3 +40,4 @@ enemies = Array[PackedScene]([ExtResource("3_skeleton"), ExtResource("4_goblin")
 [resource]
 script = ExtResource("1_wave")
 groups = Array[ExtResource("2_group")]([SubResource("Resource_group1"), SubResource("Resource_group2"), SubResource("Resource_group3"), SubResource("Resource_group4"), SubResource("Resource_group5")])
+mana_reward = 6.0

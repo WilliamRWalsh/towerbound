@@ -75,9 +75,10 @@ func test_kill_pays_mana_once() -> void:
 	var big := _spawn(Driver.BIG_GOBLIN)
 	d.hit(skeleton, 5.0, Damage.Type.PIERCE)
 	d.hit(skeleton, 5.0, Damage.Type.PIERCE)
-	assert_almost_eq(d.mana(), 6.3, 0.001)
+	# Wave 1 pays 3 mana over a reward weight of 16 (11 skeletons, 5 goblins).
+	assert_almost_eq(d.mana(), 6.19, 0.001, "a skeleton's share: 3 x 1/16")
 	d.hit(big, 20.0, Damage.Type.PIERCE)
-	assert_almost_eq(d.mana(), 7.2, 0.001)
+	assert_almost_eq(d.mana(), 6.75, 0.001, "a big goblin's share of the rest: 2.81 x 3/15")
 	assert_eq(_deaths(skeleton), 1)
 
 
@@ -153,7 +154,7 @@ func test_zombie_gets_back_up_once() -> void:
 	assert_false(zombie.is_alive())
 	assert_false(d.is_downed(zombie))
 	assert_eq(_deaths(zombie), 1)
-	assert_almost_eq(d.mana(), 6.5, 0.001)
+	assert_almost_eq(d.mana(), 6.31, 0.001, "a zombie's share: 3 x 1.67/16")
 
 
 func test_fire_keeps_a_zombie_down() -> void:

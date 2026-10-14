@@ -35,6 +35,8 @@ WAVES = [
      (3.0, 0.2, "T1B3Z3S9G10")],
 ]
 ANNOUNCEMENTS = {10: "Final Wave"}
+# Mana paid in total for killing every enemy of each wave, split by EnemyStats.reward_weight.
+MANA = [3, 3, 4, 4, 5, 5, 6, 6, 7, 7]
 
 
 def parse_counts(spec):
@@ -71,7 +73,8 @@ def wave_text(number, groups):
                   f"pause_before = {pause}", f"spacing = {spacing}",
                   f"enemies = Array[PackedScene]([{order}])"]
     refs = ", ".join(f'SubResource("Resource_group{g}")' for g in range(1, len(groups) + 1))
-    lines += ["", "[resource]", 'script = ExtResource("1_wave")', f'groups = Array[ExtResource("2_group")]([{refs}])']
+    lines += ["", "[resource]", 'script = ExtResource("1_wave")', f'groups = Array[ExtResource("2_group")]([{refs}])',
+              f"mana_reward = {float(MANA[number - 1])}"]
     if number in ANNOUNCEMENTS:
         lines.append(f'announcement = "{ANNOUNCEMENTS[number]}"')
     return "\n".join(lines) + "\n"

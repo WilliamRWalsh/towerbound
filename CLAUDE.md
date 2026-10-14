@@ -59,7 +59,7 @@ These defaults make the first slice implementable. They are not final game balan
 | Starting mana | 6 (changed from 8, then 4, then 5; see log) |
 | Mana cap | 10 |
 | Archer Tower cost | 2 mana |
-| Mana per skeleton killed | 1 |
+| Mana per wave cleared | 3, 3, 4, 4, 5, 5, 6, 6, 7, 7 for waves 1–10, split between the wave's enemies by reward weight (changed from a fixed 1 per skeleton; see log) |
 | Skeleton health | 1.5 (changed from 3, then 2; see log) |
 | Skeleton castle damage | 0.85 (changed from 1; see log) |
 | Archer Tower damage | 1.5 per shot (changed from 1; see log) |
@@ -196,6 +196,7 @@ All milestones begin unchecked. Complete each milestone's acceptance criteria be
 - Use the existing renderer, portrait layout, and iOS export setup. Do not edit generated `.godot/` or `build/` output as source files.
 - Preserve existing user work. Record milestone completion, actual validation, and deliberate tuning changes here without claiming planned work is implemented.
 - Do not invent final rarity probabilities, economy values, or shiny/holographic bonuses; those remain future design work.
+- Validate without the iOS simulator by default; it costs time and tokens. Run `./run_tests.sh` for every change, and take screenshots with `tools/capture_screens.gd` only when visuals change. Use `run_ios_simulator.sh` or `run_ios_device.sh` only when the user asks, when the change depends on iOS (safe area, system fonts, behavior seen only in exported builds), or for a milestone's final acceptance check. Say which checks were skipped.
 
 ## Architecture
 
@@ -239,11 +240,11 @@ Conventions:
   2. Run `python tools/export_card_faces.py` to write the shared frame, the painting, the icon, and the stat icons into `assets/cards/`.
   3. `CardFace` draws the cost, title, description, and stats as text.
 - **An enemy** needs three things:
-  - an `EnemyStats` resource in `data/enemies/`, with `damage_taken` by type, `final_death_types`, and revives
+  - an `EnemyStats` resource in `data/enemies/`, with `damage_taken` by type, `final_death_types`, revives, and a `reward_weight` (its share of a wave's mana relative to a skeleton's 1)
   - an `EnemyBody` subclass for the procedural art
   - a scene in `scenes/enemies/` with an `Enemy` root and a `Body` child
 
-  Then add a key to `tools/make_waves.py` and regenerate the waves.
+  Then add a key to `tools/make_waves.py` and regenerate the waves. Each wave's total mana is `MANA` in the same script.
 - **A tower** needs a `TowerStats` resource in `data/towers/` that names its `projectile` scene (`scenes/projectiles/`), a scene in `scenes/towers/` whose root extends `Tower`, and a card with a `PlaceTowerEffect`.
 - **A status effect** (slow, chill, and so on) is a `StatusEffect` resource in `data/status/`, applied with `Enemy.apply_status`.
 - **A tower upgrade** is a `TowerUpgrade` subclass in `scripts/towers/upgrades/` plus a resource in `data/upgrades/`, listed on the Upgrade card's `UpgradeTowerEffect`.
@@ -254,6 +255,7 @@ Conventions:
 
 - `./run_tests.sh` runs the GUT suite (`tests/unit`, `tests/integration`) headless at a fixed 60 fps. Pass `-gselect=<file>` to run one file.
 - Integration tests drive `scenes/main.tscn` through `tests/support/battle_driver.gd`. It hosts the battle in a 720 × 1280 SubViewport, sends taps, drags, and keys, fast-forwards time, and wraps every read of battle internals. When internals move, update the driver, not the tests.
+- `godot --headless --path . --quit-after 300` runs the main scene for 300 frames with no window and prints any script errors. It's a quick check before the full suite.
 - `godot --path . --fixed-fps 60 -s tools/capture_screens.gd -- <dir>` renders seeded reference screenshots at 720 × 1280 and 720 × 1560. It needs a display.
 - `godot --headless --path . -s tools/diff_screens.gd -- <before> <after> <diff dir>` reports how much each screenshot changed.
 - GUT (`addons/gut`) and `tests/` are excluded from the iOS export.
@@ -500,4 +502,9 @@ Run these checks as the corresponding systems become available and repeat the co
     - New card faces were reviewed side by side with the old baked cards.
     - iOS simulator exports were run after the `main.gd` split and after the card faces. Both reached the battle with the HUD below the Dynamic Island.
   - **Not checked:** Raised-card text on a real iPhone (fonts come from iOS system fonts), and a manual play-through on the phone.
+- 2026-10-13 — x2 speed button (requested by the user; milestones unchanged). An "x2" button sits in the top-right corner, and the debug Restart button moved to its left. `SpeedToggle` (`scripts/ui/speed_toggle.gd`, on `HandLayer`, placed by `HudLayout`) sets `Engine.time_scale` to 2, so everything (enemies, towers, projectiles, timers, and animations) runs twice as fast. It can only be switched on during combat. It is greyed out during preparation and after the result. It turns off when the wave is cleared, the battle ends, or the castle loses health; a Repair doesn't turn it off. Pressing it again during the same wave resumes x2. It only changes the time scale when its own state changes, so the tests' fast-forwarding isn't overridden, and it resets to x1 when the scene is freed, so Restart starts at normal speed. Validated: 7 new tests in `tests/integration/test_speed_toggle.gd` and the full suite (111 tests) pass. Screenshots at 720 × 1280 of preparation (greyed out) and combat were reviewed. Not checked on the iOS simulator or the phone.
+- 2026-10-13 — Mana per wave instead of per enemy (tuning, at the user's request; milestones unchanged).
+  - **Behavior:** Each wave now pays a fixed total for killing every enemy: 3, 3, 4, 4, 5, 5, 6, 6, 7, and 7 mana for waves 1–10 (`WaveConfig.mana_reward`, written by `MANA` in `tools/make_waves.py`). Each kill pays a share of that total and still sends one wisp.
+  - **Shares:** `EnemyStats.mana_reward` became `reward_weight`, a relative weight with the old ratios: skeleton and goblin 1, zombie 1.67, big goblin 3, giant 10. `Battle` tracks the wave's unpaid mana and remaining weight from the start of each preparation. A kill pays `unpaid × weight ÷ remaining weight`, rounded to hundredths, and the last kill takes the remainder. A full clear pays exactly the total. For example, a wave 1 skeleton pays about 0.19 (3 ÷ 16), down from 0.3. The 10 cap still drops whatever doesn't fit, and zombies pay once, on their final death.
+  - **Validation:** The full suite passed (115 tests). New tests: wave rewards are 3–7, wave 1's weight is 16, and killing every enemy of wave 1 pays exactly 3.0 and of wave 10 exactly 7.0. The kill-reward, zombie, and Fireball tests now expect wave 1 shares. The main scene ran headless for 300 frames with no errors. Not play-tested or checked on the iOS simulator.
 - Add subsequent entries with the milestone, completed behavior, validation performed, and any tuning changes with their reason.

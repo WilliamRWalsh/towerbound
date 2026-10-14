@@ -9,7 +9,7 @@ max_health = 8.0
 speed = 77.0
 strike_damage = 1.7
 attack_interval = 1.8
-mana_reward = 0.9
+reward_weight = 3.0
 damage_taken = Dictionary[int, float]({
 0: 1.5,
 1: 0.5

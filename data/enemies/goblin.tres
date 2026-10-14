@@ -8,4 +8,4 @@ display_name = "Goblin"
 speed = 93.0
 strike_damage = 0.85
 attack_interval = 1.45
-mana_reward = 0.3
+reward_weight = 1.0

@@ -2,9 +2,9 @@ class_name Battle
 extends Node
 ## The battle's rules and its one authoritative state: a preparation countdown and combat for each
 ## wave in turn, then victory or defeat. Owns mana and the deck, sends each wave through the
-## spawner, counts the enemies still in play, pays kill rewards, and ends the battle when the
-## castle falls or the last wave is cleared. Everything else reads `state` and reacts to the
-## signals; the HUD, hand, and cards never advance the battle themselves.
+## spawner, counts the enemies still in play, pays each kill its share of the wave's mana, and
+## ends the battle when the castle falls or the last wave is cleared. Everything else reads
+## `state` and reacts to the signals; the HUD, hand, and cards never advance the battle themselves.
 
 signal preparation_started(number: int, wave: WaveConfig)
 signal combat_started(number: int)
@@ -31,6 +31,9 @@ var deck: Deck
 ## Enemies of the current wave still in play (spawned and not yet killed for good).
 var _active_enemies := 0
 var _prepare_timer: Timer
+## The current wave's mana not yet paid out, and the reward weight of the kills still to pay it.
+var _reward_left := 0.0
+var _weight_left := 0.0
 
 
 func _ready() -> void:
@@ -96,8 +99,11 @@ func _end(result: State) -> void:
 func _start_next_wave() -> void:
 	wave_number += 1
 	state = State.PREPARING
+	var wave := level.waves[wave_number - 1]
+	_reward_left = wave.mana_reward
+	_weight_left = wave.reward_weight()
 	_prepare_timer.start(level.prepare_time)
-	preparation_started.emit(wave_number, level.waves[wave_number - 1])
+	preparation_started.emit(wave_number, wave)
 
 
 func _start_combat() -> void:
@@ -119,11 +125,23 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	_active_enemies -= 1
 	if is_over():
 		return
-	var granted := mana.room_for(enemy.stats.mana_reward)
+	var granted := mana.room_for(_kill_share(enemy))
 	if granted > 0.0:
 		kill_rewarded.emit(enemy, granted)
 		mana.add(granted)
 	_check_wave_end()
+
+
+## The killed enemy's share of what is left of the wave's mana, by reward weight. Shares round to
+## hundredths and the last kill takes the remainder, so clearing a wave pays exactly its total.
+func _kill_share(enemy: Enemy) -> float:
+	var weight := enemy.stats.reward_weight
+	var share := _reward_left
+	if weight < _weight_left - 0.001:
+		share = snappedf(_reward_left * weight / _weight_left, 0.01)
+	_reward_left = maxf(_reward_left - share, 0.0)
+	_weight_left = maxf(_weight_left - weight, 0.0)
+	return share
 
 
 ## The wave is over once everything has been sent and nothing is left alive.

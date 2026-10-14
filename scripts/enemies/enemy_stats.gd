@@ -11,8 +11,9 @@ extends Resource
 @export var strike_damage := 1.0
 ## Seconds between strikes while it stands at the gate.
 @export var attack_interval := 1.5
-## Mana granted once when this enemy is killed.
-@export var mana_reward := 0.1
+## This enemy's share of its wave's mana (`WaveConfig.mana_reward`), relative to the others in
+## the wave. Paid once, when it is killed.
+@export var reward_weight := 1.0
 ## Times it gets back up after being killed; `died` and the mana reward come only from the last death.
 @export var revives := 0
 ## Seconds from falling to standing again.

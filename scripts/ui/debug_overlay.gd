@@ -1,6 +1,6 @@
 class_name DebugOverlay
 extends CanvasLayer
-## Debug-only controls over the battle: a Restart button in the top-right corner, below the notch,
+## Debug-only controls over the battle: a Restart button at the top right, beside the x2 button and below the notch,
 ## that reloads the battle scene for a completely fresh run. Delete this node from main.tscn to
 ## ship without it.
 
@@ -17,4 +17,4 @@ func _ready() -> void:
 
 func _fit() -> void:
 	var view := get_viewport().get_visible_rect().size
-	_restart.position = Vector2(view.x - _restart.size.x - MARGIN, SafeArea.insets(get_viewport()).x + MARGIN)
+	_restart.position = Vector2(view.x - SpeedToggle.SIZE.x - _restart.size.x - MARGIN * 2.0, SafeArea.insets(get_viewport()).x + MARGIN)
